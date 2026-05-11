@@ -50,6 +50,7 @@ from src.docker_converter.auth import (  # noqa: E402
     create_user,
     delete_user_by_id,
     hash_password,
+    verify_password,
     login_manager,
     login_required,
     login_user,
@@ -453,7 +454,6 @@ def api_change_own_password():
     if len(new_password) < 6:
         return jsonify({"error": "密码至少 6 个字符"}), 400
 
-    from .auth import verify_password
     if not verify_password(old_password, current_user.password_hash):
         return jsonify({"error": "旧密码错误"}), 403
 
