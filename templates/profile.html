@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>用户中心 — DockerConverter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1c2330;
+      --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
+      --accent: #2f81f7; --accent-h: #388bfd;
+      --ok: #3fb950; --warn: #d29922; --err: #f85149;
+      --radius: 8px;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
+      font-size: 14px; line-height: 1.6; }
+
+    .wrap {
+      min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; padding: 20px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 32px; width: 420px; max-width: 100%;
+    }
+    .card h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
+
+    .info-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 20px; font-size: 13px;
+    }
+    .info-row .label { color: var(--text-dim); }
+    .info-row .val { font-weight: 600; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+    .form-group input {
+      width: 100%; padding: 9px 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text); font-size: 14px;
+    }
+    .form-group input:focus { outline: none; border-color: var(--accent); }
+
+    .submit-btn {
+      width: 100%; padding: 10px; border-radius: var(--radius);
+      border: none; background: var(--accent); color: #fff;
+      font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px;
+    }
+    .submit-btn:hover { background: var(--accent-h); }
+    .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .links { display: flex; justify-content: space-between; margin-top: 18px; }
+    .links a { font-size: 13px; color: var(--accent); text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 16px; font-size: 13px;
+      color: var(--text); opacity: 0; transform: translateY(8px);
+      transition: opacity .25s, transform .25s; pointer-events: none; z-index: 9999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok   { border-color: var(--ok); }
+    #toast.err  { border-color: var(--err); }
+    #toast.warn { border-color: var(--warn); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>👤 用户中心</h2>
+    <p class="sub">修改您的账户密码</p>
+
+    <div class="info-row">
+      <span class="label">用户名</span>
+      <span class="val" id="username">—</span>
+      <span class="label" style="margin-left:auto">角色</span>
+      <span class="val" id="role-badge">—</span>
+    </div>
+
+    <div class="form-group">
+      <label>旧密码</label>
+      <input type="password" id="old-pwd" placeholder="请输入当前密码" autocomplete="current-password" />
+    </div>
+    <div class="form-group">
+      <label>新密码 <span style="color:var(--text-dim);font-weight:400">(至少 6 位)</span></label>
+      <input type="password" id="new-pwd" placeholder="请输入新密码" autocomplete="new-password" />
+    </div>
+    <div class="form-group">
+      <label>确认新密码</label>
+      <input type="password" id="new-pwd2" placeholder="再次输入新密码" autocomplete="new-password" />
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="doChange()">确认修改</button>
+
+    <div class="links">
+      <a href="/">← 返回工具</a>
+      <a href="/admin">管理面板</a>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // 加载当前用户信息
+  (async () => {
+    const res = await fetch("/api/me");
+    const data = await res.json();
+    if (!data.user) { window.location.href = "/login"; return; }
+    document.getElementById("username").textContent = data.user.username;
+    document.getElementById("role-badge").textContent =
+      data.user.role === "admin" ? "管理员" : "普通用户";
+  })();
+
+  async function doChange() {
+    const oldPwd = document.getElementById("old-pwd").value;
+    const newPwd = document.getElementById("new-pwd").value;
+    const newPwd2 = document.getElementById("new-pwd2").value;
+
+    if (!oldPwd) { showToast("请输入旧密码", "warn"); return; }
+    if (!newPwd) { showToast("请输入新密码", "warn"); return; }
+    if (newPwd.length < 6) { showToast("新密码至少 6 个字符", "warn"); return; }
+    if (newPwd !== newPwd2) { showToast("两次新密码不一致", "warn"); return; }
+    if (oldPwd === newPwd) { showToast("新密码不能与旧密码相同", "warn"); return; }
+
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true; btn.textContent = "修改中…";
+
+    const res = await fetch("/api/profile/password", {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({old_password: oldPwd, password: newPwd}),
+    });
+    const data = await res.json();
+
+    btn.disabled = false; btn.textContent = "确认修改";
+
+    if (res.ok) {
+      showToast(data.message, "ok");
+      document.getElementById("old-pwd").value = "";
+      document.getElementById("new-pwd").value = "";
+      document.getElementById("new-pwd2").value = "";
+    } else {
+      showToast(data.error || "修改失败", "err");
+    }
+  }
+
+  let _toastTimer;
+  function showToast(msg, type = "ok") {
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.className = `show ${type}`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ""; }, 3000);
+  }
+</script>
+</body>
+</html>

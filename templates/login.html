@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>登录 — DockerConverter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1c2330;
+      --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
+      --accent: #2f81f7; --accent-h: #388bfd; --ok: #3fb950; --err: #f85149;
+      --radius: 8px;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px; line-height: 1.6; display: flex; align-items: center; justify-content: center; }
+
+    .card {
+      width: 100%; max-width: 400px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 36px 32px; box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+    .logo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .logo { width: 36px; height: 36px; background: var(--accent); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .logo-text h1 { font-size: 18px; font-weight: 700; }
+    .logo-text .sub { font-size: 12px; color: var(--text-dim); }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--text-dim); margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 9px 12px; background: var(--surface2);
+      color: var(--text); border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 14px; outline: none;
+      transition: border-color .2s;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn {
+      width: 100%; padding: 10px; border-radius: var(--radius);
+      border: none; font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: background .15s, opacity .15s; margin-top: 8px;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-h); }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text); margin-top: 12px;
+    }
+    .btn-ghost:hover { background: var(--surface2); }
+
+    .error-msg { color: var(--err); font-size: 13px; margin-top: 8px; min-height: 20px; }
+    .hint { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 20px; }
+    .hint a { color: var(--accent); text-decoration: none; }
+    .hint a:hover { text-decoration: underline; }
+
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.2); border-top-color: #fff;
+      border-radius: 50%; animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinning .btn-text { display: none; }
+    .spinning .spinner { display: inline-block; }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 20px; font-size: 13px;
+      color: var(--text); opacity: 0; transition: opacity .25s;
+      pointer-events: none; z-index: 9999;
+    }
+    #toast.show { opacity: 1; }
+    #toast.ok   { border-color: var(--ok); }
+    #toast.err  { border-color: var(--err); }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-row">
+    <div class="logo">🐳</div>
+    <div class="logo-text">
+      <h1>DockerConverter</h1>
+      <div class="sub">docker run → docker-compose</div>
+    </div>
+  </div>
+
+  <form id="login-form" onsubmit="return handleLogin(event)">
+    <div class="form-group">
+      <label for="username">用户名</label>
+      <input id="username" type="text" placeholder="输入用户名" autocomplete="username" required />
+    </div>
+    <div class="form-group">
+      <label for="password">密码</label>
+      <input id="password" type="password" placeholder="输入密码" autocomplete="current-password" required />
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+    <button type="submit" class="btn btn-primary" id="submit-btn">
+      <span class="btn-text">登录</span>
+      <span class="spinner" style="display:none"></span>
+    </button>
+  </form>
+
+  <div class="hint">
+    还没有账号？<a href="/register">立即注册</a>
+  </div>
+  <div class="hint">
+    <a href="/">← 返回转换工具</a>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById("submit-btn");
+    const err = document.getElementById("error-msg");
+    err.textContent = "";
+    btn.classList.add("spinning");
+    btn.disabled = true;
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("username").value.trim(),
+          password: document.getElementById("password").value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        err.textContent = data.error || "登录失败";
+        showToast(data.error || "登录失败", "err");
+      } else {
+        showToast("登录成功 ✓", "ok");
+        setTimeout(() => window.location.href = "/", 900);
+      }
+    } catch(e) {
+      err.textContent = "请求失败：" + e.message;
+      showToast("请求失败", "err");
+    } finally {
+      btn.classList.remove("spinning");
+      btn.disabled = false;
+    }
+  }
+
+  // 回车登录
+  document.getElementById("password").addEventListener("keydown", e => {
+    if (e.key === "Enter") handleLogin(e);
+  });
+
+  let _toastTimer;
+  function showToast(msg, type) {
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.className = `show ${type}`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ""; }, 2800);
+  }
+</script>
+</body>
+</html>

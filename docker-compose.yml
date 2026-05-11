@@ -1,0 +1,39 @@
+services:
+  my-nginx:
+    image: nginx:latest
+    container_name: my-nginx
+    ports:
+    - 80:80
+    volumes:
+    - ./nginx_html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+  my-backend:
+    image: myorg/my-backend:v1.0
+    container_name: my-backend
+    ports:
+    - 8080:8080
+    environment:
+    - DB_HOST=database
+    volumes:
+    - ./logs:/app/logs
+    restart: on-failure
+  my-db:
+    image: postgres:13
+    container_name: my-db
+    ports:
+    - 5432:5432
+    environment:
+    - POSTGRES_PASSWORD=secret
+    restart: always
+    networks:
+    - app-tier
+  my-worker:
+    image: myorg/worker:v2.1
+    container_name: my-worker
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    networks:
+    - app-tier
+networks:
+  app-tier:
+    external: true

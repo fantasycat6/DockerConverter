@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>转换详情 #{{ hist.id }} — DockerConverter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1c2330;
+      --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
+      --accent: #2f81f7; --accent-h: #388bfd;
+      --ok: #3fb950; --warn: #d29922; --err: #f85149;
+      --radius: 8px; --font-mono: "Cascadia Code","Fira Code","Consolas",monospace;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
+      font-size: 14px; line-height: 1.6; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
+
+    /* Header */
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { width: 28px; height: 28px; background: var(--accent); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    header h1 { font-size: 15px; font-weight: 600; }
+    .back-btn {
+      margin-left: auto; font-size: 13px; padding: 5px 14px;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: transparent; color: var(--text); cursor: pointer;
+    }
+    .back-btn:hover { background: var(--surface2); }
+
+    /* Meta */
+    .meta-bar {
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+      padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+    }
+    .meta-item { font-size: 13px; color: var(--text-dim); }
+    .meta-item span { color: var(--text); }
+    .ok-tag { color: var(--ok); }
+    .err-tag { color: var(--err); }
+
+    /* Panel */
+    .panel { background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+    .panel-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; background: var(--surface2);
+      border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600;
+    }
+    .panel-header .copy-btn {
+      margin-left: auto; font-size: 12px; padding: 3px 10px;
+      border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-dim); cursor: pointer;
+    }
+    .panel-header .copy-btn:hover { color: var(--text); background: var(--surface); }
+
+    .panel-body { padding: 14px 16px; }
+
+    /* Code block */
+    pre {
+      font-family: var(--font-mono); font-size: 13px; line-height: 1.7;
+      color: var(--text-dim); white-space: pre-wrap; word-break: break-all;
+      background: var(--surface2); border-radius: var(--radius);
+      padding: 14px 16px; margin: 0;
+      max-height: 500px; overflow: auto;
+    }
+    pre::-webkit-scrollbar { width: 6px; height: 6px; }
+    pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* YAML highlight */
+    .yaml-block pre .y-key   { color: #79c0ff; }
+    .yaml-block pre .y-str   { color: #a5d6ff; }
+    .yaml-block pre .y-num   { color: #f2cc60; }
+    .yaml-block pre .y-dash  { color: #7ee787; }
+    .yaml-block pre .y-bool  { color: #ff7b72; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 16px; font-size: 13px;
+      color: var(--text); opacity: 0; transform: translateY(8px);
+      transition: opacity .25s, transform .25s; pointer-events: none; z-index: 9999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok   { border-color: var(--ok); }
+    #toast.err  { border-color: var(--err); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🐳</div>
+  <h1>DockerConverter</h1>
+  <button class="back-btn" id="btn-back">← 返回</button>
+</header>
+
+<div class="container">
+  <div class="meta-bar">
+    <div class="meta-item">记录 <strong>#{{ hist.id }}</strong></div>
+    <div class="meta-item">用户 <span>{{ hist.user.username }}</span></div>
+    <div class="meta-item">时间 <span>{{ hist.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span></div>
+    <div class="meta-item">成功 <span class="ok-tag">✔ {{ hist.success_count }}</span></div>
+    <div class="meta-item">失败 <span class="err-tag">✘ {{ hist.failed_count }}</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      📥 输入命令
+      <button class="copy-btn" onclick="copyText('input-pre', '已复制输入')">复制</button>
+    </div>
+    <div class="panel-body">
+      <pre id="input-pre">{{ hist.input_text }}</pre>
+    </div>
+  </div>
+
+  <div class="panel yaml-block">
+    <div class="panel-header">
+      📄 输出 YAML
+      <button class="copy-btn" onclick="copyText('output-pre', '已复制YAML')">复制</button>
+    </div>
+    <div class="panel-body">
+      <pre id="output-pre">{{ hist.output_yaml }}</pre>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // 返回按钮
+  document.getElementById("btn-back").onclick = () => {
+    const referer = document.referrer;
+    if (referer && referer.includes("/admin")) {
+      history.back();
+    } else {
+      window.location.href = "/admin";
+    }
+  };
+
+  // 复制功能
+  async function copyText(id, msg) {
+    const el = document.getElementById(id);
+    try {
+      await navigator.clipboard.writeText(el.textContent);
+      showToast(msg || "已复制");
+    } catch(e) {
+      // fallback
+      const range = document.createRange();
+      range.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand("copy");
+      window.getSelection().removeAllRanges();
+      showToast(msg || "已复制");
+    }
+  }
+
+  // YAML 语法高亮
+  function highlightYaml(raw) {
+    return escHtml(raw)
+      .replace(/^( *)([\w\-]+)(:)/gm, '$1<span class="y-key">$2$3</span>')
+      .replace(/^( *)(- )/gm, '$1<span class="y-dash">- </span>')
+      .replace(/\b(true|false|yes|no|on|off)\b/g, '<span class="y-bool">$1</span>')
+      .replace(/: (\d[\d.]*)/g, ': <span class="y-num">$1</span>');
+  }
+
+  function escHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+
+  // 应用高亮到 output
+  const outputPre = document.getElementById("output-pre");
+  const raw = outputPre.textContent;
+  outputPre.innerHTML = highlightYaml(raw);
+
+  // Toast
+  let _toastTimer;
+  function showToast(msg, type = "ok") {
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.className = `show ${type}`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ""; }, 2500);
+  }
+</script>
+</body>
+</html>

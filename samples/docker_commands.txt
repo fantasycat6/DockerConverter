@@ -1,0 +1,20 @@
+docker run -d \
+  --name my-nginx \
+  -p 80:80 \
+  -v ./nginx_html:/usr/share/nginx/html:ro \
+  --restart unless-stopped \
+  nginx:latest
+
+docker run --name my-backend -p 8080:8080 -e DB_HOST=database \
+  -v ./logs:/app/logs --restart on-failure myorg/my-backend:v1.0
+
+docker run -d --name my-db -p 5432:5432 \
+  -e POSTGRES_PASSWORD=secret \
+  --network app-tier \
+  --restart always \
+  postgres:13
+
+docker run --name my-worker \
+  --network app-tier \
+  --add-host host.docker.internal:host-gateway \
+  myorg/worker:v2.1

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>管理面板 — DockerConverter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1c2330;
+      --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
+      --accent: #2f81f7; --accent-h: #388bfd;
+      --ok: #3fb950; --warn: #d29922; --err: #f85149;
+      --radius: 8px; --font-mono: "Cascadia Code","Fira Code","Consolas",monospace;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
+      font-size: 14px; line-height: 1.6; }
+
+    /* ── App shell ────────────────────────────── */
+    .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; background: var(--surface);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    header .logo { width: 28px; height: 28px; background: var(--accent); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    header h1 { font-size: 15px; font-weight: 600; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .role-badge {
+      font-size: 11px; padding: 2px 10px; border-radius: 20px;
+      background: rgba(47,129,247,.15); color: var(--accent);
+      border: 1px solid rgba(47,129,247,.3);
+    }
+    .nav-btn {
+      font-size: 13px; padding: 5px 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text); cursor: pointer; transition: background .15s;
+    }
+    .nav-btn:hover { background: var(--surface2); }
+    .nav-btn.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+
+    /* ── Tabs ─────────────────────────────────── */
+    .tab-bar {
+      display: flex; gap: 4px; padding: 10px 20px 0;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 7px 16px; border-radius: var(--radius) var(--radius) 0 0;
+      border: 1px solid transparent; border-bottom: none;
+      background: transparent; color: var(--text-dim); cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all .15s;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--surface2); }
+    .tab-btn.active { background: var(--bg); color: var(--accent); border-color: var(--border); }
+
+    /* ── Main content ─────────────────────────── */
+    .main { flex: 1; overflow: auto; padding: 16px 20px; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+    }
+    .section-title { font-size: 15px; font-weight: 600; }
+    .count-badge { font-size: 12px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 1px 8px; color: var(--text-dim); }
+
+    /* ── Cards / panels ───────────────────────── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+    }
+    .card-title { font-size: 13px; font-weight: 600; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px; }
+
+    /* ── Table ───────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; color: var(--text-dim); font-weight: 500;
+      padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+    td { padding: 9px 10px; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .mono { font-family: var(--font-mono); font-size: 12px; }
+
+    .role-tag {
+      display: inline-block; font-size: 11px; padding: 1px 8px;
+      border-radius: 10px; font-weight: 600;
+    }
+    .role-tag.admin { background: rgba(47,129,247,.15); color: var(--accent); }
+    .role-tag.user  { background: rgba(139,148,158,.15); color: var(--text-dim); }
+
+    .ok-tag  { color: var(--ok); font-size: 12px; }
+    .err-tag { color: var(--err); font-size: 12px; }
+
+    .btn-sm {
+      padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-dim); cursor: pointer; font-size: 12px;
+    }
+    .btn-sm:hover { background: var(--surface2); color: var(--text); }
+    .btn-sm.danger:hover { border-color: var(--err); color: var(--err); background: rgba(248,81,73,.1); }
+
+    /* ── YAML preview ─────────────────────────── */
+    .yaml-block {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 12px;
+      font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
+      max-height: 200px; overflow: auto; white-space: pre; color: var(--text-dim);
+    }
+    .yaml-block .y-key   { color: #79c0ff; }
+    .yaml-block .y-str   { color: #a5d6ff; }
+    .yaml-block .y-num   { color: #f2cc60; }
+    .yaml-block .y-dash  { color: #7ee787; }
+    .yaml-block .y-bool  { color: #ff7b72; }
+
+    .history-input {
+      font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 8px; max-height: 80px; overflow: auto;
+      white-space: pre-wrap; word-break: break-all; margin-bottom: 6px;
+    }
+
+    /* ── Pagination ──────────────────────────── */
+    .pagination { display: flex; align-items: center; gap: 8px; margin-top: 14px; justify-content: center; }
+    .page-btn {
+      padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--text); cursor: pointer; font-size: 13px;
+    }
+    .page-btn:hover { background: var(--surface2); }
+    .page-info { font-size: 12px; color: var(--text-dim); }
+
+    /* ── Backup section ───────────────────────── */
+    .backup-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px;
+    }
+    .backup-item .name { font-family: var(--font-mono); font-size: 13px; flex: 1; }
+    .backup-item .meta { font-size: 12px; color: var(--text-dim); }
+    .backup-item .actions { display: flex; gap: 6px; }
+
+    /* ── Checkbox ──────────────────────────────── */
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+
+    /* ── Modal ────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; width: 360px; max-width: 90vw;
+    }
+    .modal h3 { font-size: 15px; margin-bottom: 16px; }
+    .modal input[type="password"] {
+      width: 100%; padding: 8px 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text); font-size: 14px; margin-bottom: 12px;
+    }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* ── Action row ───────────────────────────── */
+    .action-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 16px;
+    }
+    .batch-delete-btn {
+      background: var(--err); color: #fff; border-color: var(--err);
+    }
+    .batch-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Toast ───────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 16px; font-size: 13px;
+      color: var(--text); opacity: 0; transform: translateY(8px);
+      transition: opacity .25s, transform .25s; pointer-events: none; z-index: 9999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok   { border-color: var(--ok); }
+    #toast.err  { border-color: var(--err); }
+    #toast.warn { border-color: var(--warn); }
+
+    /* ── Scrollbar ────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Empty state ──────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 40px; color: var(--text-dim);
+      font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .empty-state .icon { font-size: 32px; opacity: .4; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">🐳</div>
+    <h1>DockerConverter 管理面板</h1>
+    <div class="header-right">
+      <span class="role-badge" id="role-badge">管理员</span>
+      <button class="nav-btn" id="btn-home">← 返回工具</button>
+      <button class="nav-btn" id="btn-profile">👤 用户中心</button>
+      <button class="nav-btn" onclick="logout()">登出</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="history">转换历史</button>
+    <button class="tab-btn" data-tab="users">用户管理</button>
+    <button class="tab-btn" data-tab="backup">备份与恢复</button>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ── 转换历史 ── -->
+    <div class="section active" id="sec-history">
+      <div class="section-header">
+        <span class="section-title">全部转换记录</span>
+        <span class="count-badge" id="hist-count"></span>
+      </div>
+      <div class="action-row">
+        <button class="btn-sm" id="toggle-sel-btn" onclick="toggleSelectMode()">☑ 多选</button>
+        <button class="btn-sm" id="batch-del-btn" style="display:none" onclick="batchDeleteHistory()">
+          🗑 批量删除 (<span id="sel-count">0</span>)
+        </button>
+      </div>
+      <div id="history-list"></div>
+      <div class="pagination" id="hist-pagination"></div>
+    </div>
+
+    <!-- ── 用户管理 ── -->
+    <div class="section" id="sec-users">
+      <div class="section-header">
+        <span class="section-title">用户列表</span>
+        <span class="count-badge" id="user-count"></span>
+      </div>
+      <div id="user-list"></div>
+    </div>
+
+    <!-- ── 备份与恢复 ── -->
+    <div class="section" id="sec-backup">
+      <div class="section-header">
+        <span class="section-title">备份管理</span>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)"
+                onclick="doBackup()">📦 创建备份</button>
+        <label class="btn-sm" style="cursor:pointer">📥 导入备份<input type="file" accept=".json"
+                  style="display:none" onchange="doImport(this)" /></label>
+        <button class="btn-sm" onclick="loadBackups()">🔄 刷新</button>
+      </div>
+
+      <div id="backup-list">
+        <div class="empty-state">
+          <span class="icon">📦</span>
+          <span>点击「刷新」加载备份列表</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 修改密码模态框 -->
+<div class="modal-overlay hidden" id="pwd-modal">
+  <div class="modal">
+    <h3 id="pwd-modal-title">修改密码</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">管理员旧密码（验证身份）</label>
+      <input type="password" id="admin-old-pwd" placeholder="请输入您的旧密码" autocomplete="current-password" />
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">新密码（至少 6 位）</label>
+      <input type="password" id="pwd-input" placeholder="新密码" autocomplete="new-password" />
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">确认新密码</label>
+      <input type="password" id="pwd-confirm" placeholder="再次输入新密码" autocomplete="new-password" />
+    </div>
+    <div class="modal-btns">
+      <button class="btn-sm" onclick="closePwdModal()">取消</button>
+      <button class="btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)"
+              onclick="confirmPwdChange()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── 当前页状态 ───────────────────────────────────────────
+  let _histPage = 1;
+  let _histPages = 1;
+  const _perPage = 10;
+  let _selectedIds = new Set();   // 多选选中的历史ID
+  let _pendingUserId = null;      // 修改密码时目标用户ID
+  let _selectMode = false;        // 是否处于多选模式
+
+  // ── Tab 切换 ─────────────────────────────────────────────
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("sec-" + btn.dataset.tab).classList.add("active");
+
+      if (btn.dataset.tab === "history") loadHistory(_histPage);
+      else if (btn.dataset.tab === "users") loadUsers();
+      else if (btn.dataset.tab === "backup") loadBackups();
+    });
+  });
+
+  document.getElementById("btn-home").onclick = () => window.location.href = "/";
+  document.getElementById("btn-profile").onclick = () => window.location.href = "/profile";
+
+  // ── Toast ────────────────────────────────────────────────
+  let _toastTimer;
+  function showToast(msg, type = "ok") {
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.className = `show ${type}`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ""; }, 3000);
+  }
+
+  // ── 登出 ─────────────────────────────────────────────────
+  async function logout() {
+    await fetch("/api/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
+
+  // ── 转换历史 ─────────────────────────────────────────────
+  function toggleSelectMode() {
+    _selectMode = !_selectMode;
+    _selectedIds.clear();
+    const selBtn = document.getElementById("toggle-sel-btn");
+    const batchBtn = document.getElementById("batch-del-btn");
+    const cbs = document.querySelectorAll(".hist-cb, .cb-all");
+    if (_selectMode) {
+      selBtn.textContent = "✕ 取消多选";
+      selBtn.style.color = "var(--err)";
+      batchBtn.style.display = "";
+      cbs.forEach(cb => cb.style.display = "");
+    } else {
+      selBtn.textContent = "☑ 多选";
+      selBtn.style.color = "";
+      batchBtn.style.display = "none";
+      cbs.forEach(cb => cb.style.display = "none");
+    }
+    updateBatchBtn();
+  }
+
+  async function loadHistory(page = 1) {
+    _histPage = page;
+    _selectedIds.clear();
+    updateBatchBtn();
+    const res = await fetch(`/api/admin/history?page=${page}&per_page=${_perPage}`);
+    if (!res.ok) { showToast("加载历史失败", "err"); return; }
+    const data = await res.json();
+    document.getElementById("hist-count").textContent = `${data.total} 条记录`;
+    _histPages = data.pages;
+
+    const el = document.getElementById("history-list");
+    if (!data.items.length) {
+      el.innerHTML = '<div class="empty-state"><span class="icon">📋</span><span>暂无转换记录</span></div>';
+    } else {
+      el.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox" class="cb-all" id="cb-all" style="display:none"
+                     onchange="toggleAll(this.checked)" /></th>
+              <th style="width:60px">ID</th>
+              <th style="width:90px">用户</th>
+              <th style="width:160px">时间</th>
+              <th style="width:80px;text-align:center">成功</th>
+              <th style="width:80px;text-align:center">失败</th>
+              <th>输入预览</th>
+              <th style="width:70px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.items.map(h => `
+              <tr id="hist-row-${h.id}">
+                <td style="text-align:center">
+                  <input type="checkbox" class="hist-cb" value="${h.id}" style="display:none"
+                         onchange="toggleSel(${h.id})" />
+                </td>
+                <td class="mono">
+                  <a href="/history/${h.id}" style="color:var(--accent);text-decoration:none"
+                     title="查看详情">#${h.id}</a>
+                </td>
+                <td><span class="role-tag user" style="font-size:11px">${escHtml(h.username)}</span></td>
+                <td style="font-size:12px;color:var(--text-dim)">${h.created_at}</td>
+                <td style="text-align:center"><span class="ok-tag">✔ ${h.success_count}</span></td>
+                <td style="text-align:center">
+                  ${h.failed_count ? `<span class="err-tag">✘ ${h.failed_count}</span>` : "—"}
+                </td>
+                <td class="mono" style="color:var(--text-dim);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                    title="${escAttr(h.input_text)}">
+                  ${escHtml(h.input_text.substring(0, 60))}${h.input_text.length > 60 ? "…" : ""}
+                </td>
+                <td>
+                  <button class="btn-sm danger" onclick="delHist(${h.id})">🗑</button>
+                </td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`;
+    }
+
+    renderPagination("hist-pagination", _histPage, _histPages, loadHistory);
+  }
+
+  function toggleAll(checked) {
+    document.querySelectorAll(".hist-cb").forEach(cb => {
+      cb.checked = checked;
+      const id = parseInt(cb.value);
+      if (checked) _selectedIds.add(id);
+      else _selectedIds.delete(id);
+    });
+    updateBatchBtn();
+  }
+
+  function toggleSel(id) {
+    if (_selectedIds.has(id)) _selectedIds.delete(id);
+    else _selectedIds.add(id);
+    updateBatchBtn();
+  }
+
+  function updateBatchBtn() {
+    const cnt = _selectedIds.size;
+    document.getElementById("sel-count").textContent = cnt;
+    document.getElementById("batch-del-btn").disabled = cnt === 0;
+  }
+
+  async function batchDeleteHistory() {
+    const ids = Array.from(_selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`确认删除选中的 ${ids.length} 条记录？`)) return;
+    const res = await fetch("/api/admin/history/batch-delete", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ids}),
+    });
+    const data = await res.json();
+    if (res.ok) { showToast(data.message); loadHistory(_histPage); }
+    else showToast(data.error || "删除失败", "err");
+  }
+
+  async function delHist(id) {
+    if (!confirm("确认删除此条记录？")) return;
+    const res = await fetch(`/api/admin/history/${id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (res.ok) { showToast("已删除"); loadHistory(_histPage); }
+    else showToast(data.error || "删除失败", "err");
+  }
+
+  // ── 用户管理 ─────────────────────────────────────────────
+  async function loadUsers() {
+    const res = await fetch("/api/admin/users");
+    if (!res.ok) { showToast("加载用户失败", "err"); return; }
+    const data = await res.json();
+    document.getElementById("user-count").textContent = `${data.users.length} 位用户`;
+
+    const el = document.getElementById("user-list");
+    if (!data.users.length) {
+      el.innerHTML = '<div class="empty-state"><span class="icon">👤</span><span>暂无用户</span></div>';
+      return;
+    }
+    el.innerHTML = `
+      <table>
+        <thead><tr>
+          <th style="width:60px">ID</th>
+          <th>用户名</th>
+          <th style="width:90px">角色</th>
+          <th style="width:100px;text-align:center">转换次数</th>
+          <th style="width:160px">注册时间</th>
+          <th style="width:160px">操作</th>
+        </tr></thead>
+        <tbody>
+          ${data.users.map(u => `
+            <tr>
+              <td class="mono">${u.id}</td>
+              <td>${escHtml(u.username)}</td>
+              <td><span class="role-tag ${u.role}">${u.role === "admin" ? "管理员" : "用户"}</span></td>
+              <td style="text-align:center">${u.conversion_count}</td>
+              <td style="font-size:12px;color:var(--text-dim)">${u.created_at}</td>
+              <td>
+                <button class="btn-sm" style="color:var(--accent)" onclick="openPwdModal(${u.id}, '${escAttr(u.username)}')"
+                        title="重置密码">🔑 改密</button>
+                ${u.role !== "admin" ? `<button class="btn-sm danger" onclick="delUser(${u.id})">🗑</button>` : ""}
+              </td>
+            </tr>`).join("")}
+        </tbody>
+      </table>`;
+  }
+
+  function openPwdModal(userId, username) {
+    _pendingUserId = userId;
+    document.getElementById("pwd-modal-title").textContent = `修改「${username}」的密码`;
+    document.getElementById("pwd-input").value = "";
+    document.getElementById("pwd-confirm").value = "";
+    document.getElementById("pwd-modal").classList.remove("hidden");
+    document.getElementById("pwd-input").focus();
+  }
+
+  function closePwdModal() {
+    document.getElementById("pwd-modal").classList.add("hidden");
+    _pendingUserId = null;
+    document.getElementById("admin-old-pwd").value = "";
+    document.getElementById("pwd-input").value = "";
+    document.getElementById("pwd-confirm").value = "";
+  }
+
+  async function confirmPwdChange() {
+    if (!_pendingUserId) return;
+    const oldPwd = document.getElementById("admin-old-pwd").value;
+    const pwd = document.getElementById("pwd-input").value;
+    const pwd2 = document.getElementById("pwd-confirm").value;
+    if (!oldPwd) { showToast("请输入管理员旧密码", "warn"); return; }
+    if (pwd.length < 6) { showToast("密码至少 6 个字符", "warn"); return; }
+    if (pwd !== pwd2) { showToast("两次密码不一致", "warn"); return; }
+
+    const res = await fetch(`/api/admin/users/${_pendingUserId}/password`, {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({old_password: oldPwd, password: pwd}),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(data.message);
+      closePwdModal();
+    } else {
+      showToast(data.error || "修改失败", "err");
+    }
+  }
+
+  async function delUser(id) {
+    if (!confirm("确认删除此用户？其所有转换记录也会一并删除。")) return;
+    const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (res.ok) { showToast("已删除"); loadUsers(); }
+    else showToast(data.error || "删除失败", "err");
+  }
+
+  // ── 备份与恢复 ────────────────────────────────────────────
+  async function loadBackups() {
+    const res = await fetch("/api/backup/list");
+    if (!res.ok) { showToast("加载备份列表失败", "err"); return; }
+    const data = await res.json();
+    const el = document.getElementById("backup-list");
+
+    if (!data.backups.length) {
+      el.innerHTML = '<div class="empty-state"><span class="icon">📦</span><span>暂无备份文件</span></div>';
+      return;
+    }
+    el.innerHTML = data.backups.map(b => `
+      <div class="backup-item">
+        <span class="name">${escHtml(b.filename)}</span>
+        <span class="meta">${fmtSize(b.size)} &nbsp; ${b.mtime}</span>
+        <div class="actions">
+          <button class="btn-sm" onclick="downloadBackup('${escAttr(b.filename)}')">⬇ 下载</button>
+          <button class="btn-sm" style="color:var(--ok)" onclick="restoreBackup('${escAttr(b.filename)}')">↩ 恢复</button>
+          <button class="btn-sm danger" onclick="deleteBackup('${escAttr(b.filename)}')">🗑</button>
+        </div>
+      </div>`).join("");
+  }
+
+  async function doBackup() {
+    showToast("正在创建备份…", "warn");
+    try {
+      const res = await fetch("/api/backup/create", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, "ok");
+        loadBackups();
+      } else {
+        showToast(data.error || "创建失败", "err");
+      }
+    } catch(e) {
+      showToast("创建失败：" + e.message, "err");
+    }
+  }
+
+  async function deleteBackup(filename) {
+    if (!confirm(`确认删除备份「${filename}」？此操作不可恢复。`)) return;
+    const res = await fetch(`/api/backup/${encodeURIComponent(filename)}`, { method: "DELETE" });
+    const data = await res.json();
+    if (res.ok) { showToast(data.message); loadBackups(); }
+    else showToast(data.error || "删除失败", "err");
+  }
+
+  async function restoreBackup(filename) {
+    if (!confirm(`确认从备份「${filename}」恢复数据？\n\n注意：已有相同ID的历史记录不会被覆盖。`)) return;
+    showToast("正在恢复…", "warn");
+    try {
+      const res = await fetch(`/api/backup/${encodeURIComponent(filename)}/restore`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, "ok");
+      } else {
+        showToast(data.error || "恢复失败", "err");
+      }
+    } catch(e) {
+      showToast("恢复失败：" + e.message, "err");
+    }
+  }
+
+  async function doImport(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!confirm(`将导入备份文件 "${file.name}"，是否继续？\n\n注意：已有数据不会被覆盖。`)) {
+      input.value = ""; return;
+    }
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/backup/import", { method: "POST", body: fd });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(data.message + " ✓", "ok");
+      loadBackups();
+    } else {
+      showToast(data.error || "导入失败", "err");
+    }
+    input.value = "";
+  }
+
+  function downloadBackup(filename) {
+    window.open(`/api/backup/export`, "_blank");
+  }
+
+  // ── 分页组件 ──────────────────────────────────────────────
+  function renderPagination(elId, current, total, callback) {
+    const el = document.getElementById(elId);
+    if (total <= 1) { el.innerHTML = ""; return; }
+    let html = `<button class="page-btn" onclick="arguments[0].stopPropagation()" ${current <= 1 ? "disabled" : ""}
+      ${current > 1 ? `onclick="(${callback.toString()})(${current - 1})"` : ""}>← 上一页</button>
+      <span class="page-info">第 ${current} / ${total} 页</span>
+      <button class="page-btn" ${current >= total ? "disabled" : ""}
+      ${current < total ? `onclick="(${callback.toString()})(${current + 1})"` : ""}>下一页 →</button>`;
+    el.innerHTML = html;
+  }
+
+  // ── YAML 高亮（截取前 600 字符，避免 XSS）──────────────
+  function highlightYaml(raw) {
+    return escHtml(raw)
+      .replace(/^( *)([\w\-]+)(:)/gm, '$1<span class="y-key">$2$3</span>')
+      .replace(/^( *)(- )/gm, '$1<span class="y-dash">- </span>')
+      .replace(/\b(true|false|yes|no|on|off)\b/g, '<span class="y-bool">$1</span>')
+      .replace(/: (\d[\d.]*)/g, ': <span class="y-num">$1</span>');
+  }
+
+  function escHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function escAttr(str) {
+    return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / 1024 / 1024).toFixed(1) + " MB";
+  }
+
+  // ── 初始化 ───────────────────────────────────────────────
+  (async () => {
+    const meRes = await fetch("/api/me");
+    const meData = await meRes.json();
+    if (!meData.user || meData.user.role !== "admin") {
+      showToast("无权限访问管理面板", "err");
+      setTimeout(() => window.location.href = "/", 800);
+      return;
+    }
+    loadHistory(1);
+  })();
+</script>
+</body>
+</html>

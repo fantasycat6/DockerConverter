@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>{{ code }} — DockerConverter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #0d1117; --surface: #161b22; --border: #30363d;
+      --text: #e6edf3; --text-dim: #8b949e; --accent: #2f81f7; --err: #f85149;
+      --radius: 8px; }
+    body { height: 100vh; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
+      display: flex; align-items: center; justify-content: center; }
+    .box { text-align: center; }
+    .code { font-size: 80px; font-weight: 700; color: var(--err); opacity: .6; }
+    .msg { font-size: 16px; color: var(--text-dim); margin: 12px 0 24px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="code">{{ code }}</div>
+  <div class="msg">{{ message }}</div>
+  <a href="/">← 返回首页</a>
+</div>
+</body>
+</html>
