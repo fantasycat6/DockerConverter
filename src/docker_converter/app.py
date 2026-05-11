@@ -529,14 +529,20 @@ def api_backup_export():
     bd = _backup_dir()
     filename = request.args.get("file", "")
     if filename:
-        # 安全检查
+        # 安全检查：只允许下载 backups/ 目录下的 .json 文件
         if not filename.endswith(".json") or "/" in filename or "\\" in filename:
             return jsonify({"error": "非法文件名"}), 400
         filepath = os.path.join(bd, filename)
+        # 安全检查：确保路径在 backups/ 目录内，防止路径穿越
+        if not os.path.normpath(filepath).startswith(os.path.normpath(bd)):
+            return jsonify({"error": "非法路径"}), 400
         if not os.path.exists(filepath):
             return jsonify({"error": "备份文件不存在"}), 404
     else:
-        files = sorted([f for f in os.listdir(bd) if f.endswith(".json")])
+        try:
+            files = sorted([f for f in os.listdir(bd) if f.endswith(".json")])
+        except PermissionError:
+            return jsonify({"error": "无权限访问备份目录"}), 500
         if not files:
             return jsonify({"error": "暂无备份文件"}), 404
         filepath = os.path.join(bd, files[-1])
@@ -608,9 +614,17 @@ def api_backup_delete(filename):
     if not filename.endswith(".json") or "/" in filename or "\\" in filename:
         return jsonify({"error": "非法文件名"}), 400
     filepath = os.path.join(bd, filename)
+    # 安全检查：确保路径在 backups/ 目录内，防止路径穿越
+    if not os.path.normpath(filepath).startswith(os.path.normpath(bd)):
+        return jsonify({"error": "非法路径"}), 400
     if not os.path.exists(filepath):
         return jsonify({"error": "备份文件不存在"}), 404
-    os.remove(filepath)
+    try:
+        os.remove(filepath)
+    except PermissionError:
+        return jsonify({"error": "无权限删除文件，请检查 backups 目录权限"}), 500
+    except OSError as e:
+        return jsonify({"error": f"删除失败：{str(e)}"}), 500
     return jsonify({"message": f"备份「{filename}」已删除"})
 
 
@@ -624,6 +638,9 @@ def api_backup_restore(filename):
     if not filename.endswith(".json") or "/" in filename or "\\" in filename:
         return jsonify({"error": "非法文件名"}), 400
     filepath = os.path.join(bd, filename)
+    # 安全检查：确保路径在 backups/ 目录内，防止路径穿越
+    if not os.path.normpath(filepath).startswith(os.path.normpath(bd)):
+        return jsonify({"error": "非法路径"}), 400
     if not os.path.exists(filepath):
         return jsonify({"error": "备份文件不存在"}), 404
     try:

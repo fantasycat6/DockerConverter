@@ -177,6 +177,31 @@ docker run --name my-db -p 5432:5432 \
 
 ---
 
+## Linux / 云服务器部署
+
+### 权限问题（重要）
+
+Web 应用通常以 `www-data` 系统用户运行，需要对项目目录有写入权限：
+
+```bash
+# 假设项目在 /var/www/DockerConverter
+sudo mkdir -p /var/www/DockerConverter/backups
+sudo chown -R www-data:www-data /var/www/DockerConverter/backups
+sudo chmod 755 /var/www/DockerConverter/backups
+
+# 如整个项目目录都需要写权限（data/ 目录等）
+sudo chown -R www-data:www-data /var/www/DockerConverter
+```
+
+### 使用 Gunicorn 运行
+
+```bash
+pip install gunicorn
+gunicorn -w 2 -b 0.0.0.0:5030 "src.docker_converter.app:app"
+```
+
+---
+
 ## 许可证
 
 MIT License

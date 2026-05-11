@@ -71,11 +71,13 @@ def list_backups() -> list[dict]:
     for name in sorted(os.listdir(bd)):
         if name.endswith(".json"):
             path = os.path.join(bd, name)
-            size = os.path.getsize(path)
-            mtime = datetime.fromtimestamp(os.path.getmtime(path))
+            try:
+                size = os.path.getsize(path)
+                mtime = datetime.fromtimestamp(os.path.getmtime(path))
+            except OSError:
+                continue  # 跳过无法访问的文件
             files.append({
                 "filename": name,
-                "path": path,
                 "size": size,
                 "mtime": mtime.strftime("%Y-%m-%d %H:%M:%S"),
             })
