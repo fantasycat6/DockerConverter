@@ -10,7 +10,12 @@ build/
 venv/
 .venv/
 env/
+env/
+# 环境变量（含密钥，绝不能提交）
 .env
+# 生成文件
+samples/docker-compose.yml
+docker-compose.yml
 
 # 数据库（运行时生成）
 *.db
@@ -23,6 +28,7 @@ backups/
 .idea/
 *.swp
 *.swo
+.workbuddy
 
 # OS
 .DS_Store

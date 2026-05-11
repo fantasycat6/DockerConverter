@@ -16,9 +16,9 @@ DockerConverter/
 │       ├── __init__.py      # 包版本
 │       ├── core.py          # 核心转换逻辑
 │       ├── app.py           # Flask Web 服务入口
-│       ├── auth.py          # 用户认证
-│       ├── db.py            # 数据库模型
-│       └── backup.py        # 备份导出/导入
+│       ├── auth.py          # 用户认证与权限
+│       ├── db.py            # 数据库模型（SQLAlchemy）
+│       └── backup.py        # 备份导出 / 导入
 ├── templates/
 │   ├── index.html            # 转换工具主界面
 │   ├── login.html            # 登录页
@@ -29,13 +29,12 @@ DockerConverter/
 │   └── error.html            # 错误页
 ├── samples/
 │   └── docker_commands.txt   # 示例命令文件
-├── .env                      # 环境变量配置（运行时）
+├── .env                      # 环境变量配置（不提交）
 ├── .env.example              # 环境变量示例
 ├── .gitignore
 ├── DockerConverter.py        # CLI 入口
-├── RunWeb.bat               # 启动 Web UI（Windows）
-├── RunCLI.bat               # 启动 CLI（Windows）
-├── Run.bat                  # 启动 Web UI（同 RunWeb）
+├── RunWeb.bat               # 启动 Web UI（Windows 双击）
+├── RunCLI.bat               # 启动 CLI（Windows 双击）
 ├── requirements.txt
 └── README.md
 ```
@@ -51,9 +50,8 @@ DockerConverter/
 pip install -r requirements.txt
 ```
 
-**2. 启动服务（Windows）**
-- 双击 `RunWeb.bat` 启动 Web UI
-- 或双击 `Run.bat`
+**2. 启动服务（Windows 双击）**
+- `RunWeb.bat` — 启动 Web UI
 
 **2. 启动服务（命令行）**
 ```bash
@@ -62,24 +60,24 @@ python -m src.docker_converter.app
 
 **3. 打开浏览器**
 ```
-http://127.0.0.1:5000
+http://127.0.0.1:5030
 ```
-首次访问会跳转到注册页面创建管理员账号。
+首次访问会自动跳转注册页面，第一个注册用户为管理员。
 
 **Web UI 功能：**
 - 左侧粘贴 `docker run` 命令（支持多条、多行续行 `\`、注释 `#`）
 - 上传 `.txt` 文件批量处理
 - 右侧实时预览生成的 YAML，支持语法高亮
 - 一键复制或下载 `docker-compose.yml`
-- 转换历史自动保存，可查看详情
-- 管理面板：用户管理、转换历史、备份恢复
+- 转换历史自动保存，可查看详情、分页浏览
+- 管理面板：用户管理、转换历史、备份 / 恢复
+- 用户中心：修改密码、查看个人转换统计
 
 ---
 
 ### 方式二：命令行（CLI）
 
-**Windows：**
-双击 `RunCLI.bat`
+**Windows 双击：** `RunCLI.bat`
 
 **直接运行：**
 ```bash
@@ -97,11 +95,11 @@ python DockerConverter.py my_commands.txt my-compose.yml
 复制 `.env.example` 为 `.env` 后修改：
 
 ```env
-PORT=5000
+PORT=5030
 HOST=127.0.0.1
 
 # Flask SECRET_KEY（生产环境务必修改！）
-SECRET_KEY=
+SECRET_KEY=your-secret-key-here
 
 # 默认管理员（首次启动时自动创建，仅当数据库为空时生效）
 ADMIN_USERNAME=admin
@@ -163,9 +161,9 @@ docker run --name my-db -p 5432:5432 \
 
 ## 管理面板功能
 
-- **转换历史**：查看所有用户的转换记录，支持详情页、批量删除
-- **用户管理**：管理用户账号，修改密码
-- **备份恢复**：全量备份导出/导入，支持下载和恢复
+- **转换历史**：查看所有用户的转换记录，支持详情页、多选批量删除、分页跳转
+- **用户管理**：管理用户账号，修改密码（管理员改密需验证旧密码）
+- **备份恢复**：全量备份导出 / 导入，支持下载和恢复
 - **用户中心**：修改个人密码
 
 ---
@@ -175,6 +173,7 @@ docker run --name my-db -p 5432:5432 \
 - `--network` 指定的网络默认声明为 `external: true`，如需内部网络请手动修改
 - `--health-*` healthcheck 参数目前仅打印警告，不解析
 - `--cpus` / `--memory` 映射到 compose v3 的 `deploy.resources.limits`
+- 首位注册用户自动成为管理员（如配置了 `ADMIN_USERNAME` 则优先使用该账号）
 
 ---
 

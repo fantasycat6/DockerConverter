@@ -18,7 +18,7 @@
       font-size: 14px; line-height: 1.6; display: flex; align-items: center; justify-content: center; }
 
     .card {
-      width: 100%; max-width: 400px; background: var(--surface);
+      width: 100%; max-width: 440px; background: var(--surface);
       border: 1px solid var(--border); border-radius: 12px;
       padding: 36px 32px; box-shadow: 0 8px 32px rgba(0,0,0,.4);
     }
@@ -38,12 +38,20 @@
     .form-group { margin-bottom: 14px; }
     label { display: block; font-size: 13px; font-weight: 500; color: var(--text-dim); margin-bottom: 6px; }
     input {
-      width: 100%; padding: 9px 12px; background: var(--surface2);
+      width: 100%; padding: 9px 36px 9px 12px; background: var(--surface2);
       color: var(--text); border: 1px solid var(--border);
       border-radius: var(--radius); font-size: 14px; outline: none;
       transition: border-color .2s;
     }
     input:focus { border-color: var(--accent); }
+    .pwd-wrap { position: relative; }
+    .pwd-wrap input { width: 100%; padding-right: 36px; }
+    .pwd-toggle {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--text-dim);
+      font-size: 14px; padding: 2px 4px; line-height: 1;
+    }
+    .pwd-toggle:hover { color: var(--text); }
 
     .btn {
       width: 100%; padding: 10px; border-radius: var(--radius);
@@ -108,11 +116,17 @@
     </div>
     <div class="form-group">
       <label for="password">密码</label>
-      <input id="password" type="password" placeholder="至少 6 个字符" autocomplete="new-password" required />
+      <div class="pwd-wrap">
+        <input id="password" type="password" placeholder="至少 6 个字符" autocomplete="new-password" required />
+        <button type="button" class="pwd-toggle" onclick="togglePwd('password')">👁</button>
+      </div>
     </div>
     <div class="form-group">
       <label for="password2">确认密码</label>
-      <input id="password2" type="password" placeholder="再输一次" autocomplete="new-password" required />
+      <div class="pwd-wrap">
+        <input id="password2" type="password" placeholder="再输一次" autocomplete="new-password" required />
+        <button type="button" class="pwd-toggle" onclick="togglePwd('password2')">👁</button>
+      </div>
     </div>
     <div class="error-msg" id="error-msg"></div>
     <button type="submit" class="btn btn-primary" id="submit-btn">
@@ -171,6 +185,11 @@
       btn.classList.remove("spinning");
       btn.disabled = false;
     }
+  }
+
+  function togglePwd(id) {
+    const inp = document.getElementById(id);
+    inp.type = inp.type === "password" ? "text" : "password";
   }
 
   let _toastTimer;

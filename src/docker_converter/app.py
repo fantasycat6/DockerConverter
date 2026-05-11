@@ -227,6 +227,57 @@ def api_me():
     return jsonify({"user": None})
 
 
+@app.get("/api/me/history/stats")
+@login_required
+def api_me_history_stats():
+    """获取当前用户的转换统计。"""
+    from sqlalchemy import func
+
+    stats = db.session.query(
+        func.count(ConversionHistory.id).label("total"),
+        func.coalesce(func.sum(ConversionHistory.success_count), 0).label("success"),
+        func.coalesce(func.sum(ConversionHistory.failed_count), 0).label("failed"),
+    ).filter_by(user_id=current_user.id).first()
+
+    # 获取最新记录ID（用于计算注册天数）
+    latest = (
+        ConversionHistory.query
+        .filter_by(user_id=current_user.id)
+        .order_by(ConversionHistory.created_at.asc())
+        .first()
+    )
+
+    return jsonify({
+        "total": stats.total or 0,
+        "success": int(stats.success or 0),
+        "failed": int(stats.failed or 0),
+        "latest_id": latest.id if latest else None,
+    })
+
+
+@app.get("/api/me/history")
+@login_required
+def api_me_history():
+    """获取当前用户的转换历史（分页）。"""
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    per_page = min(per_page, 100)
+
+    pagination = (
+        ConversionHistory.query
+        .filter_by(user_id=current_user.id)
+        .order_by(ConversionHistory.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+
+    return jsonify({
+        "items": [h.to_dict() for h in pagination.items],
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "page": page,
+    })
+
+
 # ──────────────────────────────────────────────────────────────
 # 转换 API
 # ──────────────────────────────────────────────────────────────
@@ -365,22 +416,25 @@ def api_admin_delete_user(user_id):
 def api_admin_change_password(user_id):
     """
     管理员重置指定用户的密码。
-    必须验证管理员自身的旧密码。
+    若目标用户是管理员，需验证旧密码。
+    若目标用户是普通用户，无需验证旧密码。
     """
     target = db.session.get(User, user_id)
     if not target:
         return jsonify({"error": "用户不存在"}), 404
 
     data = request.get_json(silent=True) or {}
-    old_password = data.get("old_password", "")
     new_password = data.get("password", "")
     if len(new_password) < 6:
         return jsonify({"error": "密码至少 6 个字符"}), 400
 
-    # 验证管理员自身身份
-    from .auth import verify_password
-    if not verify_password(old_password, current_user.password_hash):
-        return jsonify({"error": "管理员身份验证失败"}), 403
+    # 管理员修改自己的密码，需验证旧密码
+    if target.role == "admin" and target.id == current_user.id:
+        old_password = data.get("old_password", "")
+        if not old_password:
+            return jsonify({"error": "请输入旧密码"}), 400
+        if not verify_password(old_password, target.password_hash):
+            return jsonify({"error": "旧密码错误"}), 400
 
     target.password_hash = hash_password(new_password)
     db.session.commit()
@@ -470,13 +524,22 @@ def api_admin_batch_delete_history():
 @login_required
 @admin_required
 def api_backup_export():
-    """下载最新备份文件（由创建备份API生成）。"""
+    """下载备份文件。支持 ?file= 指定文件，缺省下载最新的。"""
     from .backup import _backup_dir
     bd = _backup_dir()
-    files = sorted([f for f in os.listdir(bd) if f.endswith(".json")])
-    if not files:
-        return jsonify({"error": "暂无备份文件"}), 404
-    filepath = os.path.join(bd, files[-1])  # 下载最新的
+    filename = request.args.get("file", "")
+    if filename:
+        # 安全检查
+        if not filename.endswith(".json") or "/" in filename or "\\" in filename:
+            return jsonify({"error": "非法文件名"}), 400
+        filepath = os.path.join(bd, filename)
+        if not os.path.exists(filepath):
+            return jsonify({"error": "备份文件不存在"}), 404
+    else:
+        files = sorted([f for f in os.listdir(bd) if f.endswith(".json")])
+        if not files:
+            return jsonify({"error": "暂无备份文件"}), 404
+        filepath = os.path.join(bd, files[-1])
     return send_file(
         filepath,
         as_attachment=True,
@@ -600,12 +663,7 @@ def favicon_ico():
 def main() -> None:
     port = int(os.environ.get("PORT", 5000))
     host = os.environ.get("HOST", "127.0.0.1")
-    print(f"\n  DockerConverter Web UI  (v2.2)")
-    print(f"  ─────────────────────────────────────")
-    print(f"  Running on  http://{host}:{port}")
-    print(f"  Open http://{host}:{port}/register to create your first account")
-    print(f"  (First registered user becomes admin automatically)")
-    print(f"\n  Press Ctrl+C to stop.\n")
+    # 启动信息由启动脚本输出，避免重复
     app.run(host=host, port=port, debug=False)
 
 

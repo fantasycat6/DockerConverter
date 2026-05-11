@@ -6,7 +6,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <title>转换详情 #{{ hist.id }} — DockerConverter</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
     :root {
       --bg: #0d1117; --surface: #161b22; --surface2: #1c2330;
       --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
@@ -18,13 +18,11 @@
       font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
       font-size: 14px; line-height: 1.6; }
 
-    .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
-
     /* Header */
     header {
       display: flex; align-items: center; gap: 12px;
       padding: 12px 20px; background: var(--surface);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
     .logo { width: 28px; height: 28px; background: var(--accent); border-radius: 6px;
       display: flex; align-items: center; justify-content: center; font-size: 16px; }
@@ -36,23 +34,49 @@
     }
     .back-btn:hover { background: var(--surface2); }
 
+    /* Container */
+    .container {
+      max-width: 1200px; margin: 0 auto;
+      padding: 16px 20px;
+      height: calc(100vh - 53px);
+      display: flex; flex-direction: column;
+    }
+
     /* Meta */
     .meta-bar {
       display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
-      padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      margin-bottom: 12px; flex-shrink: 0;
     }
     .meta-item { font-size: 13px; color: var(--text-dim); }
     .meta-item span { color: var(--text); }
     .ok-tag { color: var(--ok); }
     .err-tag { color: var(--err); }
 
+    /* Left-right grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
     /* Panel */
-    .panel { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .panel:first-child { border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    .panel:last-child  { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+
     .panel-header {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 16px; background: var(--surface2);
       border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600;
+      flex-shrink: 0;
     }
     .panel-header .copy-btn {
       margin-left: auto; font-size: 12px; padding: 3px 10px;
@@ -61,17 +85,20 @@
     }
     .panel-header .copy-btn:hover { color: var(--text); background: var(--surface); }
 
-    .panel-body { padding: 14px 16px; }
+    .panel-body {
+      padding: 12px;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
 
     /* Code block */
     pre {
       font-family: var(--font-mono); font-size: 13px; line-height: 1.7;
       color: var(--text-dim); white-space: pre-wrap; word-break: break-all;
-      background: var(--surface2); border-radius: var(--radius);
-      padding: 14px 16px; margin: 0;
-      max-height: 500px; overflow: auto;
+      margin: 0;
     }
-    pre::-webkit-scrollbar { width: 6px; height: 6px; }
+    pre::-webkit-scrollbar { width: 6px; }
     pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
     /* YAML highlight */
@@ -92,6 +119,13 @@
     #toast.show { opacity: 1; transform: translateY(0); }
     #toast.ok   { border-color: var(--ok); }
     #toast.err  { border-color: var(--err); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .panel:first-child { border-right: 1px solid var(--border); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+      .panel:last-child  { border-top-left-radius: 0; border-top-right-radius: 0; }
+    }
   </style>
 </head>
 <body>
@@ -111,23 +145,27 @@
     <div class="meta-item">失败 <span class="err-tag">✘ {{ hist.failed_count }}</span></div>
   </div>
 
-  <div class="panel">
-    <div class="panel-header">
-      📥 输入命令
-      <button class="copy-btn" onclick="copyText('input-pre', '已复制输入')">复制</button>
+  <div class="detail-grid">
+    <!-- Left: Input -->
+    <div class="panel">
+      <div class="panel-header">
+        📥 输入命令
+        <button class="copy-btn" onclick="copyText('input-pre', '已复制输入')">复制</button>
+      </div>
+      <div class="panel-body">
+        <pre id="input-pre">{{ hist.input_text }}</pre>
+      </div>
     </div>
-    <div class="panel-body">
-      <pre id="input-pre">{{ hist.input_text }}</pre>
-    </div>
-  </div>
 
-  <div class="panel yaml-block">
-    <div class="panel-header">
-      📄 输出 YAML
-      <button class="copy-btn" onclick="copyText('output-pre', '已复制YAML')">复制</button>
-    </div>
-    <div class="panel-body">
-      <pre id="output-pre">{{ hist.output_yaml }}</pre>
+    <!-- Right: Output -->
+    <div class="panel yaml-block">
+      <div class="panel-header">
+        📄 输出 YAML
+        <button class="copy-btn" onclick="copyText('output-pre', '已复制 YAML')">复制</button>
+      </div>
+      <div class="panel-body">
+        <pre id="output-pre">{{ hist.output_yaml }}</pre>
+      </div>
     </div>
   </div>
 </div>
@@ -135,7 +173,6 @@
 <div id="toast"></div>
 
 <script>
-  // 返回按钮
   document.getElementById("btn-back").onclick = () => {
     const referer = document.referrer;
     if (referer && referer.includes("/admin")) {
@@ -145,14 +182,12 @@
     }
   };
 
-  // 复制功能
   async function copyText(id, msg) {
     const el = document.getElementById(id);
     try {
       await navigator.clipboard.writeText(el.textContent);
       showToast(msg || "已复制");
     } catch(e) {
-      // fallback
       const range = document.createRange();
       range.selectNode(el);
       window.getSelection().removeAllRanges();
@@ -163,7 +198,6 @@
     }
   }
 
-  // YAML 语法高亮
   function highlightYaml(raw) {
     return escHtml(raw)
       .replace(/^( *)([\w\-]+)(:)/gm, '$1<span class="y-key">$2$3</span>')
@@ -178,12 +212,11 @@
       .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
   }
 
-  // 应用高亮到 output
+  // Apply highlight to output
   const outputPre = document.getElementById("output-pre");
   const raw = outputPre.textContent;
   outputPre.innerHTML = highlightYaml(raw);
 
-  // Toast
   let _toastTimer;
   function showToast(msg, type = "ok") {
     const el = document.getElementById("toast");

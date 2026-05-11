@@ -12,31 +12,89 @@
       --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
       --accent: #2f81f7; --accent-h: #388bfd;
       --ok: #3fb950; --warn: #d29922; --err: #f85149;
-      --radius: 8px;
+      --radius: 8px; --font-mono: "Cascadia Code","Fira Code","Consolas",monospace;
     }
     html, body { height: 100%; background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
       font-size: 14px; line-height: 1.6; }
 
-    .wrap {
-      min-height: 100vh; display: flex; align-items: center;
-      justify-content: center; padding: 20px;
+    /* ── App shell ────────────────────────────── */
+    .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; background: var(--surface);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
+    header .logo { width: 28px; height: 28px; background: var(--accent); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    header h1 { font-size: 15px; font-weight: 600; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+    /* ── Tabs ─────────────────────────────────── */
+    .tab-bar {
+      display: flex; gap: 4px; padding: 10px 20px 0;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 7px 16px; border-radius: var(--radius) var(--radius) 0 0;
+      border: 1px solid transparent; border-bottom: none;
+      background: transparent; color: var(--text-dim); cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all .15s;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--surface2); }
+    .tab-btn.active { background: var(--bg); color: var(--accent); border-color: var(--border); }
+
+    /* ── Main content ─────────────────────────── */
+    .main { flex: 1; overflow: auto; padding: 20px; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+
+    /* ── Info card ───────────────────────────── */
+    .info-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+    }
+    .user-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    .avatar-lg {
+      width: 56px; height: 56px; background: var(--accent);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #fff; font-weight: 700;
+    }
+    .user-header h2 { font-size: 18px; font-weight: 600; }
+    .user-header .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+    .role-tag {
+      display: inline-block; font-size: 11px; padding: 2px 10px;
+      border-radius: 20px; font-weight: 600;
+    }
+    .role-tag.admin { background: rgba(47,129,247,.15); color: var(--accent); }
+    .role-tag.user  { background: rgba(139,148,158,.15); color: var(--text-dim); }
+
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .stat-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px;
+    }
+    .stat-item .label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+    .stat-item .value { font-size: 20px; font-weight: 700; color: var(--accent); }
+
+    /* ── Password form ────────────────────────── */
     .card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 32px; width: 420px; max-width: 100%;
+      border-radius: var(--radius); padding: 20px;
     }
-    .card h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-    .sub { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
-
-    .info-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 14px; background: var(--surface2);
-      border: 1px solid var(--border); border-radius: var(--radius);
-      margin-bottom: 20px; font-size: 13px;
-    }
-    .info-row .label { color: var(--text-dim); }
-    .info-row .val { font-weight: 600; }
+    .card-title { font-size: 14px; font-weight: 600; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px; }
 
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
@@ -46,20 +104,57 @@
       color: var(--text); font-size: 14px;
     }
     .form-group input:focus { outline: none; border-color: var(--accent); }
+    .form-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 
     .submit-btn {
-      width: 100%; padding: 10px; border-radius: var(--radius);
+      padding: 9px 20px; border-radius: var(--radius);
       border: none; background: var(--accent); color: #fff;
-      font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
     }
     .submit-btn:hover { background: var(--accent-h); }
     .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-    .links { display: flex; justify-content: space-between; margin-top: 18px; }
-    .links a { font-size: 13px; color: var(--accent); text-decoration: none; }
-    .links a:hover { text-decoration: underline; }
+    .nav-btn {
+      font-size: 13px; padding: 5px 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text); cursor: pointer; transition: background .15s;
+    }
+    .nav-btn:hover { background: var(--surface2); }
+    .nav-btn.danger:hover { border-color: var(--err); color: var(--err); background: rgba(248,81,73,.1); }
 
-    /* Toast */
+    /* ── History table ───────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; color: var(--text-dim); font-weight: 500;
+      padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+    td { padding: 10px 10px; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .mono { font-family: var(--font-mono); font-size: 12px; }
+    .ok-tag  { color: var(--ok); font-size: 12px; }
+    .err-tag { color: var(--err); font-size: 12px; }
+
+    /* ── Pagination ──────────────────────────── */
+    .pagination { display: flex; align-items: center; gap: 6px; margin-top: 16px; justify-content: center; }
+    .page-btn {
+      min-width: 32px; height: 32px; padding: 0 8px; border-radius: 6px;
+      border: 1px solid var(--border); background: transparent; color: var(--text);
+      cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .page-btn:hover:not(:disabled) { background: var(--surface2); }
+    .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .page-info { font-size: 12px; color: var(--text-dim); margin: 0 8px; }
+    .page-jump {
+      display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-dim);
+    }
+    .page-jump input {
+      width: 48px; padding: 4px 6px; border-radius: 4px;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text); font-size: 12px; text-align: center;
+    }
+    .page-jump input:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Toast ───────────────────────────────── */
     #toast {
       position: fixed; bottom: 24px; right: 24px;
       background: var(--surface); border: 1px solid var(--border);
@@ -71,66 +166,298 @@
     #toast.ok   { border-color: var(--ok); }
     #toast.err  { border-color: var(--err); }
     #toast.warn { border-color: var(--warn); }
+
+    /* ── Scrollbar ────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Empty state ─────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 40px; color: var(--text-dim);
+      font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .empty-state .icon { font-size: 32px; opacity: .4; }
   </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <h2>👤 用户中心</h2>
-    <p class="sub">修改您的账户密码</p>
+<div class="app">
 
-    <div class="info-row">
-      <span class="label">用户名</span>
-      <span class="val" id="username">—</span>
-      <span class="label" style="margin-left:auto">角色</span>
-      <span class="val" id="role-badge">—</span>
+  <!-- Header -->
+  <header>
+    <div class="logo">🐳</div>
+    <h1>DockerConverter — 用户中心</h1>
+    <div class="header-right">
+      <button class="nav-btn" id="btn-home">← 返回工具</button>
+      <button class="nav-btn" id="btn-admin" style="display:none">⚙ 管理面板</button>
+      <button class="nav-btn danger" onclick="logout()">登出</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="profile">👤 个人信息</button>
+    <button class="tab-btn" data-tab="history">📋 我的转换历史</button>
+    <button class="tab-btn" data-tab="security">🔐 安全设置</button>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ── 个人信息 ── -->
+    <div class="section active" id="sec-profile">
+      <div class="info-card">
+        <div class="user-header">
+          <div class="avatar-lg" id="user-avatar">?</div>
+          <div>
+            <h2 id="user-name">—</h2>
+            <div class="meta">
+              <span id="user-role-badge" class="role-tag user">用户</span>
+              <span id="user-since" style="margin-left:10px;color:var(--text-dim)">注册于 —</span>
+            </div>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="label">转换次数</div>
+            <div class="value" id="stat-conversions">—</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">成功转换</div>
+            <div class="value" id="stat-success" style="color:var(--ok)">—</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">失败次数</div>
+            <div class="value" id="stat-failed" style="color:var(--err)">—</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">注册天数</div>
+            <div class="value" id="stat-days" style="color:var(--text-dim)">—</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>旧密码</label>
-      <input type="password" id="old-pwd" placeholder="请输入当前密码" autocomplete="current-password" />
-    </div>
-    <div class="form-group">
-      <label>新密码 <span style="color:var(--text-dim);font-weight:400">(至少 6 位)</span></label>
-      <input type="password" id="new-pwd" placeholder="请输入新密码" autocomplete="new-password" />
-    </div>
-    <div class="form-group">
-      <label>确认新密码</label>
-      <input type="password" id="new-pwd2" placeholder="再次输入新密码" autocomplete="new-password" />
+    <!-- ── 我的转换历史 ── -->
+    <div class="section" id="sec-history">
+      <div class="section-title">我的转换记录</div>
+      <div class="card">
+        <div id="history-list"></div>
+        <div class="pagination" id="history-pagination"></div>
+      </div>
     </div>
 
-    <button class="submit-btn" id="submit-btn" onclick="doChange()">确认修改</button>
-
-    <div class="links">
-      <a href="/">← 返回工具</a>
-      <a href="/admin">管理面板</a>
+    <!-- ── 安全设置 ── -->
+    <div class="section" id="sec-security">
+      <div class="section-title">修改密码</div>
+      <div class="card" style="max-width:480px">
+        <div class="card-title">🔑 账户密码</div>
+        <div class="form-group">
+          <label>当前密码</label>
+          <input type="password" id="old-pwd" placeholder="请输入当前密码" autocomplete="current-password" />
+        </div>
+        <div class="form-group">
+          <label>新密码 <span style="color:var(--text-dim);font-weight:400">(至少 6 位)</span></label>
+          <input type="password" id="new-pwd" placeholder="请输入新密码" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label>确认新密码</label>
+          <input type="password" id="new-pwd2" placeholder="再次输入新密码" autocomplete="new-password" />
+        </div>
+        <button class="submit-btn" id="submit-btn" onclick="doChange()">确认修改</button>
+      </div>
     </div>
+
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-  // 加载当前用户信息
-  (async () => {
+  // ── State ────────────────────────────────────────────────
+  let _currentUser = null;
+  let _histPage = 1;
+  let _histPages = 1;
+  const _perPage = 10;
+
+  // ── Tab 切换 ─────────────────────────────────────────────
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("sec-" + btn.dataset.tab).classList.add("active");
+
+      if (btn.dataset.tab === "history") loadHistory(1);
+    });
+  });
+
+  document.getElementById("btn-home").onclick = () => window.location.href = "/";
+  document.getElementById("btn-admin").onclick = () => window.location.href = "/admin";
+
+  // ── Toast ────────────────────────────────────────────────
+  let _toastTimer;
+  function showToast(msg, type = "ok") {
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.className = `show ${type}`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ""; }, 3000);
+  }
+
+  // ── 登出 ─────────────────────────────────────────────────
+  async function logout() {
+    await fetch("/api/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
+
+  // ── 加载用户信息 ──────────────────────────────────────────
+  async function loadUserInfo() {
     const res = await fetch("/api/me");
     const data = await res.json();
     if (!data.user) { window.location.href = "/login"; return; }
-    document.getElementById("username").textContent = data.user.username;
-    document.getElementById("role-badge").textContent =
-      data.user.role === "admin" ? "管理员" : "普通用户";
-  })();
+    _currentUser = data.user;
 
+    // 更新 header
+    document.getElementById("user-name").textContent = data.user.username;
+    document.getElementById("user-avatar").textContent = data.user.username.charAt(0).toUpperCase();
+    document.getElementById("user-role-badge").className = `role-tag ${data.user.role}`;
+    document.getElementById("user-role-badge").textContent = data.user.role === "admin" ? "管理员" : "普通用户";
+
+    // 显示管理面板按钮
+    if (data.user.role === "admin") {
+      document.getElementById("btn-admin").style.display = "";
+    }
+
+    // 加载统计数据
+    loadUserStats();
+  }
+
+  async function loadUserStats() {
+    try {
+      const res = await fetch("/api/me/history/stats");
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById("stat-conversions").textContent = data.total || 0;
+        document.getElementById("stat-success").textContent = data.success || 0;
+        document.getElementById("stat-failed").textContent = data.failed || 0;
+        if (data.total > 0) {
+          const firstRes = await fetch(`/api/history/${data.latest_id}`);
+          if (firstRes.ok) {
+            const hist = await firstRes.json();
+            const regDate = new Date(hist.created_at);
+            const now = new Date();
+            const days = Math.floor((now - regDate) / (1000 * 60 * 60 * 24));
+            document.getElementById("user-since").textContent = `注册于 ${regDate.toLocaleDateString("zh-CN")}（${days} 天）`;
+            document.getElementById("stat-days").textContent = days;
+          }
+        }
+      }
+    } catch(e) {
+      console.error("加载统计失败", e);
+    }
+  }
+
+  // ── 加载历史记录 ──────────────────────────────────────────
+  async function loadHistory(page = 1) {
+    _histPage = page;
+    const res = await fetch(`/api/me/history?page=${page}&per_page=${_perPage}`);
+    if (!res.ok) { showToast("加载历史失败", "err"); return; }
+    const data = await res.json();
+
+    _histPages = data.pages;
+    const el = document.getElementById("history-list");
+
+    if (!data.items.length) {
+      el.innerHTML = '<div class="empty-state"><span class="icon">📋</span><span>暂无转换记录</span></div>';
+    } else {
+      var rows = "";
+      for (var i = 0; i < data.items.length; i++) {
+        var h = data.items[i];
+        var failCol = h.failed_count
+          ? '<span class="err-tag">&#10008; ' + h.failed_count + '</span>'
+          : '&#8212;';
+        var ellip = h.input_text.length > 60 ? '&hellip;' : '';
+        rows += '<tr>'
+          + '<td class="mono"><a href="/history/' + h.id + '" style="color:var(--accent);text-decoration:none" title="查看详情">#' + h.id + '</a></td>'
+          + '<td style="font-size:12px;color:var(--text-dim)">' + h.created_at + '</td>'
+          + '<td style="text-align:center"><span class="ok-tag">&#10004; ' + h.success_count + '</span></td>'
+          + '<td style="text-align:center">' + failCol + '</td>'
+          + '<td class="mono" style="color:var(--text-dim);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+          + ' title="' + escAttr(h.input_text) + '">'
+          + escHtml(h.input_text.substring(0, 60)) + ellip + '</td>'
+          + '<td><a href="/history/' + h.id + '" class="btn-sm" style="text-decoration:none">查看</a></td>'
+          + '</tr>';
+      }
+      el.innerHTML = '<table><thead><tr>'
+        + '<th style="width:60px">ID</th>'
+        + '<th style="width:160px">时间</th>'
+        + '<th style="width:70px;text-align:center">成功</th>'
+        + '<th style="width:70px;text-align:center">失败</th>'
+        + '<th>输入预览</th>'
+        + '<th style="width:80px">操作</th>'
+        + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    renderPagination("history-pagination", _histPage, _histPages, loadHistory);
+  }
+
+  // ── 分页组件（带数字跳转）─────────────────────────────────
+  function renderPagination(elId, current, total, callback) {
+    const el = document.getElementById(elId);
+    if (total <= 1) { el.innerHTML = ""; return; }
+
+    let html = `<button class="page-btn" ${current <= 1 ? "disabled" : ""}
+      onclick="(${callback.toString()})(${current - 1})">←</button>`;
+
+    // 页码按钮（最多显示7个）
+    const maxVisible = 7;
+    let startPage = Math.max(1, current - Math.floor(maxVisible / 2));
+    let endPage = Math.min(total, startPage + maxVisible - 1);
+    if (endPage - startPage < maxVisible - 1) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (startPage > 1) {
+      html += `<button class="page-btn" onclick="(${callback.toString()})(1)">1</button>`;
+      if (startPage > 2) html += `<span style="color:var(--text-dim);padding:0 2px">…</span>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="page-btn ${i === current ? 'active' : ''}"
+        onclick="(${callback.toString()})(${i})">${i}</button>`;
+    }
+
+    if (endPage < total) {
+      if (endPage < total - 1) html += `<span style="color:var(--text-dim);padding:0 2px">…</span>`;
+      html += `<button class="page-btn" onclick="(${callback.toString()})(${total})">${total}</button>`;
+    }
+
+    html += `<button class="page-btn" ${current >= total ? "disabled" : ""}
+      onclick="(${callback.toString()})(${current + 1})">→</button>`;
+
+    // 跳转框
+    html += `<span class="page-info">第 ${current} / ${total} 页</span>`;
+    html += `<div class="page-jump">
+      跳至 <input type="number" min="1" max="${total}" value="${current}"
+        onkeydown="if(event.key==='Enter'){const p=parseInt(this.value);if(p>=1&&p<=${total})(${callback.toString()})(p);}"
+        onchange="const p=parseInt(this.value);if(p>=1&&p<=${total})(${callback.toString()})(p);" />
+      页
+    </div>`;
+
+    el.innerHTML = html;
+  }
+
+  // ── 修改密码 ─────────────────────────────────────────────
   async function doChange() {
     const oldPwd = document.getElementById("old-pwd").value;
     const newPwd = document.getElementById("new-pwd").value;
     const newPwd2 = document.getElementById("new-pwd2").value;
 
-    if (!oldPwd) { showToast("请输入旧密码", "warn"); return; }
+    if (!oldPwd) { showToast("请输入当前密码", "warn"); return; }
     if (!newPwd) { showToast("请输入新密码", "warn"); return; }
     if (newPwd.length < 6) { showToast("新密码至少 6 个字符", "warn"); return; }
     if (newPwd !== newPwd2) { showToast("两次新密码不一致", "warn"); return; }
-    if (oldPwd === newPwd) { showToast("新密码不能与旧密码相同", "warn"); return; }
+    if (oldPwd === newPwd) { showToast("新密码不能与当前密码相同", "warn"); return; }
 
     const btn = document.getElementById("submit-btn");
     btn.disabled = true; btn.textContent = "修改中…";
@@ -154,13 +481,18 @@
     }
   }
 
-  let _toastTimer;
-  function showToast(msg, type = "ok") {
-    const el = document.getElementById("toast");
-    el.textContent = msg; el.className = `show ${type}`;
-    clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => { el.className = ""; }, 3000);
+  // ── 工具函数 ─────────────────────────────────────────────
+  function escHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
   }
+  function escAttr(str) {
+    return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // ── 初始化 ───────────────────────────────────────────────
+  loadUserInfo();
 </script>
 </body>
 </html>
