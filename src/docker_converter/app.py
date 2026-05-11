@@ -525,7 +525,7 @@ def api_admin_batch_delete_history():
 @admin_required
 def api_backup_export():
     """下载备份文件。支持 ?file= 指定文件，缺省下载最新的。"""
-    from .backup import _backup_dir
+    from src.docker_converter.backup import _backup_dir
     bd = _backup_dir()
     filename = request.args.get("file", "")
     if filename:
@@ -608,7 +608,7 @@ def api_backup_import():
 @admin_required
 def api_backup_delete(filename):
     """删除指定的备份文件。"""
-    from .backup import _backup_dir
+    from src.docker_converter.backup import _backup_dir
     bd = _backup_dir()
     # 安全检查：只允许删除 backups/ 目录下的 .json 文件
     if not filename.endswith(".json") or "/" in filename or "\\" in filename:
@@ -633,7 +633,7 @@ def api_backup_delete(filename):
 @admin_required
 def api_backup_restore(filename):
     """从指定备份文件恢复数据。"""
-    from .backup import _backup_dir
+    from src.docker_converter.backup import _backup_dir
     bd = _backup_dir()
     if not filename.endswith(".json") or "/" in filename or "\\" in filename:
         return jsonify({"error": "非法文件名"}), 400
