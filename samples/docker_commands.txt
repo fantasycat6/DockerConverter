@@ -18,3 +18,61 @@ docker run --name my-worker \
   --network app-tier \
   --add-host host.docker.internal:host-gateway \
   myorg/worker:v2.1
+
+# 新增更多参数的示例
+docker run -d \
+  --name my-full-service \
+  -p 8081:80 \
+  -v ./data:/data \
+  -e APP_ENV=prod \
+  -e DB_URL=postgres://user:pass@db:5432/mydb \
+  --hostname myapp \
+  --domainname example.com \
+  --workdir /app \
+  --dns 8.8.8.8 \
+  --dns 8.8.4.4 \
+  --dns-search localdomain \
+  --dns-option ndots:0 \
+  --ipc host \
+  --pid host \
+  --uts host \
+  --init \
+  --network my-net \
+  --network-alias app1 \
+  --network-alias app2 \
+  --link my-db:db \
+  --group-add 999 \
+  --mac-address 02:42:ac:11:00:02 \
+  --ip 172.20.0.10 \
+  --shm-size 2g \
+  --privileged \
+  --read-only \
+  -it \
+  --user 1000:1000 \
+  --cap-add SYS_ADMIN \
+  --cap-drop MKNOD \
+  --device /dev/ttyUSB0 \
+  --label app=myapp \
+  --label version=1.0 \
+  --sysctl net.core.somaxconn=1024 \
+  --tmpfs /tmp:rw,size=100m \
+  --ulimit nofile=65536:65536 \
+  --ulimit nproc=4096 \
+  --security-opt apparmor=unconfined \
+  --stop-signal SIGINT \
+  --stop-timeout 60 \
+  --restart always \
+  --health-cmd "curl -f http://localhost/health || exit 1" \
+  --health-interval 30s \
+  --health-timeout 10s \
+  --health-retries 3 \
+  --health-start-period 1m \
+  --gpus all \
+  --memory 1g \
+  --memory-reservation 512m \
+  --memory-swap 2g \
+  --cpu-shares 512 \
+  --cpuset-cpus 0-1 \
+  --oom-kill-disable \
+  --platform linux/amd64 \
+  nginx:alpine

@@ -21,6 +21,7 @@ DockerConverter/
 │       └── backup.py        # 备份导出 / 导入
 ├── templates/
 │   ├── index.html            # 转换工具主界面
+│   ├── help.html             # 帮助中心 & 教程
 │   ├── login.html            # 登录页
 │   ├── register.html         # 注册页
 │   ├── admin.html            # 管理面板
@@ -70,6 +71,7 @@ http://127.0.0.1:5030
 - 右侧实时预览生成的 YAML，支持语法高亮
 - 一键复制或下载 `docker-compose.yml`
 - 转换历史自动保存，可查看详情、分页浏览
+- **帮助中心**：功能介绍、快速开始、使用教程、常见问题
 - 管理面板：用户管理、转换历史、备份 / 恢复
 - 用户中心：修改密码、查看个人转换统计
 
@@ -139,6 +141,7 @@ docker run --name my-db -p 5432:5432 \
 | `-e` / `--env` | `environment` |
 | `--restart` | `restart` |
 | `--network` | `networks`（顶层声明为 `external: true`） |
+| `--network-alias` | `networks.<name>.aliases` |
 | `--hostname` | `hostname` |
 | `--entrypoint` | `entrypoint` |
 | `--add-host` | `extra_hosts` |
@@ -154,7 +157,20 @@ docker run --name my-db -p 5432:5432 \
 | `--label` | `labels` |
 | `--sysctl` | `sysctls` |
 | `--tmpfs` | `tmpfs` |
-| `--cpus` / `--memory` | `deploy.resources.limits` |
+| `--cpus` / `--memory` / `--cpuset-cpus` / `--cpu-shares` / `--memory-swap` / `--memory-swappiness` / `--cpu-period` / `--cpu-quota` / `--cpu-rt-period` / `--cpu-rt-runtime` | `deploy.resources.limits` |
+| `--health-*` | `healthcheck` |
+| `--dns` / `--dns-opt` / `--dns-search` | `dns` / `dns_opt` / `dns_search` |
+| `--domainname` | `domainname` |
+| `--mac-address` | `mac_address` |
+| `--ip` / `--ip6` | `networks.<name>.ipv4_address` / `networks.<name>.ipv6_address` |
+| `--link-local-ip` | 待支持 |
+| `--links` | `links` |
+| `--mount` | 待支持 |
+| `--volumes-from` | `volumes_from` |
+| `--gpus` | `deploy.resources.reservations.devices` |
+| `--ulimit` | `ulimits` |
+| `--init` | `init: true` |
+| `--oom-score-adj` / `--oom-kill-disable` / `--pids-limit` / `--blkio-weight` / `--blkio-weight-device` / `--device-read-bps` / `--device-write-bps` / `--device-read-iops` / `--device-write-iops` / `--cgroup-parent` / `--cgroupns` / `--ipc` / `--pid` / `--uts` / `--userns` / `--isolation` / `--security-opt` / `--storage-opt` / `--stop-signal` / `--stop-timeout` / `--shm-size` | 待支持 |
 | `-d` / `--detach` / `--rm` | 忽略（compose 默认行为） |
 
 ---
@@ -171,8 +187,9 @@ docker run --name my-db -p 5432:5432 \
 ## 注意事项
 
 - `--network` 指定的网络默认声明为 `external: true`，如需内部网络请手动修改
-- `--health-*` healthcheck 参数目前仅打印警告，不解析
+- `--health-*` healthcheck 参数已支持完整解析
 - `--cpus` / `--memory` 映射到 compose v3 的 `deploy.resources.limits`
+- `--rm` 参数在 compose 中无直接对应，会被忽略并给出警告
 - 首位注册用户自动成为管理员（如配置了 `ADMIN_USERNAME` 则优先使用该账号）
 
 ---

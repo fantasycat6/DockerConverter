@@ -136,14 +136,14 @@ def index():
 @app.get("/login")
 def login_page():
     if current_user.is_authenticated:
-        return "", 204
+        return redirect(url_for("index"))
     return render_template("login.html")
 
 
 @app.get("/register")
 def register_page():
     if current_user.is_authenticated:
-        return "", 204
+        return redirect(url_for("index"))
     return render_template("register.html")
 
 
@@ -171,6 +171,12 @@ def history_detail_page(hist_id):
 def profile_page():
     """用户中心页面。"""
     return render_template("profile.html")
+
+
+@app.get("/help")
+def help_page():
+    """帮助中心页面（无需登录）。"""
+    return render_template("help.html")
 
 
 # ──────────────────────────────────────────────────────────────

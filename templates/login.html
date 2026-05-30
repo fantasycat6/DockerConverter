@@ -28,7 +28,7 @@
     .logo-text h1 { font-size: 18px; font-weight: 700; }
     .logo-text .sub { font-size: 12px; color: var(--text-dim); }
 
-    .form-group { margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
     label { display: block; font-size: 13px; font-weight: 500; color: var(--text-dim); margin-bottom: 6px; }
     input {
       width: 100%; padding: 9px 36px 9px 12px; background: var(--surface2);
@@ -49,7 +49,7 @@
     .btn {
       width: 100%; padding: 10px; border-radius: var(--radius);
       border: none; font-size: 14px; font-weight: 600; cursor: pointer;
-      transition: background .15s, opacity .15s; margin-top: 8px;
+      transition: background .15s; margin-top: 8px;
     }
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { background: var(--accent-h); }
@@ -71,7 +71,6 @@
       border-radius: var(--radius); padding: 10px 12px; font-size: 12px;
       color: var(--text-dim); margin-bottom: 20px; line-height: 1.6;
     }
-    .info-box-spacer { height: 57px; margin-bottom: 20px; }
 
     .spinner {
       display: inline-block; width: 16px; height: 16px;
@@ -97,14 +96,17 @@
 <body>
   <div class="card">
   <div class="logo-row">
-    <div class="logo">🐳</div>
-    <div class="logo-text">
-      <h1>DockerConverter</h1>
-      <div class="sub">docker run → docker-compose</div>
-    </div>
+    <a href="/" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text);">
+      <div class="logo">🐳</div>
+      <div class="logo-text">
+        <h1>DockerConverter</h1>
+        <div class="sub">docker run → docker-compose.yml</div>
+      </div>
+    </a>
   </div>
-
-  <div class="info-box-spacer"></div>
+  <div style="text-align: right; margin-bottom: 20px;">
+    <a href="/help" style="color: var(--text-dim); font-size: 12px; text-decoration: none;">📖 帮助</a>
+  </div>
 
   <form id="login-form" onsubmit="return handleLogin(event)">
     <div class="form-group">
@@ -136,6 +138,42 @@
 <div id="toast"></div>
 
 <script>
+  // Check if user is already logged in
+  (async () => {
+    try {
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      if (data.user) {
+        // Show logged-in state
+        const form = document.getElementById("login-form");
+        if (form) form.style.display = "none";
+
+        // Create logged-in message
+        const loggedInMsg = document.createElement("div");
+        loggedInMsg.innerHTML = `
+          <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 48px; margin-bottom: 16px;">👋</div>
+            <h3 style="margin-bottom: 12px;">您已登录</h3>
+            <p style="color: var(--text-dim); margin-bottom: 20px;">欢迎回来, <strong>${escapeHtml(data.user.username)}</strong></p>
+            <a href="/" style="display: inline-block; padding: 10px 24px; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              开始使用工具 →
+            </a>
+          </div>
+        `;
+        document.querySelector(".card").insertBefore(loggedInMsg, document.querySelector(".card > div:first-of-type").nextSibling);
+      }
+    } catch (error) {
+      console.error("Failed to check login status:", error);
+    }
+  })();
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     const btn = document.getElementById("submit-btn");
@@ -175,17 +213,12 @@
     inp.type = inp.type === "password" ? "text" : "password";
   }
 
-  // 回车登录
-  document.getElementById("password").addEventListener("keydown", e => {
-    if (e.key === "Enter") handleLogin(e);
-  });
-
   let _toastTimer;
   function showToast(msg, type) {
     const el = document.getElementById("toast");
     el.textContent = msg; el.className = `show ${type}`;
     clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => { el.className = ""; }, 2800);
+    _toastTimer = setTimeout(() => { el.className = ""; }, 3000);
   }
 </script>
 </body>

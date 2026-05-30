@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>帮助中心 — DockerConverter</title>
+  <style>
+    /* ── Reset & Variables ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2330;
+      --surface3:  #21262d;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --text-dim:  #8b949e;
+      --accent:    #2f81f7;
+      --accent-h:  #58a6ff;
+      --accent-g:  linear-gradient(135deg, #2f81f7, #8957e5);
+      --ok:        #3fb950;
+      --warn:      #d29922;
+      --err:       #f85149;
+      --radius:    12px;
+      --radius-sm: 8px;
+      --shadow:    0 8px 32px rgba(0,0,0,.4);
+      --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── Header ────────────────────────────────────────── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .header-logo .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--accent-g);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+
+    .header-logo h1 { font-size: 18px; font-weight: 600; }
+    .header-logo .badge {
+      font-size: 11px;
+      background: rgba(47,129,247,.15);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .nav-links {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 14px;
+      transition: all .2s;
+    }
+
+    .nav-link:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .nav-link.active {
+      background: rgba(47,129,247,.15);
+      color: var(--accent);
+    }
+
+    /* ── Hero Section ───────────────────────────────────── */
+    .hero {
+      padding: 80px 32px;
+      text-align: center;
+      background: radial-gradient(ellipse at top, rgba(47,129,247,.15), transparent 70%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 40px,
+        rgba(47,129,247,.03) 40px,
+        rgba(47,129,247,.03) 80px
+      );
+      animation: moveStripes 60s linear infinite;
+    }
+
+    @keyframes moveStripes {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(-80px, 80px); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: var(--accent-g);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: var(--text-dim);
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      margin-top: 48px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* ── Main Container ─────────────────────────────────── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 64px 32px;
+    }
+
+    /* ── Section ────────────────────────────────────────── */
+    .section {
+      margin-bottom: 80px;
+    }
+
+    .section-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title .icon {
+      font-size: 36px;
+    }
+
+    .section-desc {
+      font-size: 18px;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+      max-width: 800px;
+    }
+
+    /* ── Feature Cards ──────────────────────────────────── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      transition: all .3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-g);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+      border-color: var(--accent);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    /* ── Steps ──────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      position: relative;
+      transition: all .3s ease;
+    }
+
+    .step:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(47,129,247,.1);
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 48px; height: 48px;
+      background: var(--accent-g);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    /* ── Code Blocks ────────────────────────────────────── */
+    .code-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-block .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 6px 12px;
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .code-block .copy-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .code-block code {
+      color: var(--text);
+    }
+
+    .code-comment { color: #8b949e; }
+    .code-string  { color: #a5d6ff; }
+    .code-keyword { color: #ff7b72; }
+    .code-flag    { color: #79c0ff; }
+
+    /* ── Parameters Table ────────────────────────────────── */
+    .params-table {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .params-table th,
+    .params-table td {
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .params-table th {
+      background: var(--surface2);
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .params-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .params-table tr:hover td {
+      background: var(--surface2);
+    }
+
+    .params-table code {
+      background: var(--surface3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    /* ── FAQ ─────────────────────────────────────────────── */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .faq-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .faq-question {
+      padding: 20px 24px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background .2s;
+    }
+
+    .faq-question:hover {
+      background: var(--surface2);
+    }
+
+    .faq-question .toggle {
+      font-size: 20px;
+      color: var(--accent);
+      transition: transform .3s;
+    }
+
+    .faq-item.open .faq-question .toggle {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .3s ease;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 500px;
+    }
+
+    .faq-answer-content {
+      padding: 0 24px 20px;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-g);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(47,129,247,.4);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface2);
+      border-color: var(--accent);
+    }
+
+    /* ── Callouts ────────────────────────────────────────── */
+    .callout {
+      padding: 20px 24px;
+      border-radius: var(--radius-sm);
+      margin: 24px 0;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .callout-info {
+      background: rgba(47,129,247,.1);
+      border: 1px solid rgba(47,129,247,.3);
+    }
+
+    .callout-warning {
+      background: rgba(210,153,34,.1);
+      border: 1px solid rgba(210,153,34,.3);
+    }
+
+    .callout-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .callout-content {
+      flex: 1;
+    }
+
+    .callout-content h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .callout-content p {
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    /* ── Quick Links ─────────────────────────────────────── */
+    .quick-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .quick-link {
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all .2s;
+    }
+
+    .quick-link:hover {
+      background: var(--surface2);
+      border-color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    .quick-link .icon {
+      font-size: 24px;
+    }
+
+    .quick-link span {
+      font-weight: 500;
+    }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    .footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 32px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 32px; }
+      .hero p { font-size: 16px; }
+      .hero-stats { flex-direction: column; gap: 24px; }
+      .nav-links { display: none; }
+      .container { padding: 32px 16px; }
+      .section-title { font-size: 24px; }
+      .step { flex-direction: column; }
+      .params-table { font-size: 13px; }
+      .params-table th,
+      .params-table td { padding: 12px; }
+    }
+
+    /* ── Animations ─────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-in {
+      animation: fadeInUp .6s ease forwards;
+    }
+
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+    .delay-4 { animation-delay: .4s; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <a href="/" class="header-logo">
+      <div class="logo-icon">🐳</div>
+      <h1>DockerConverter <span class="badge">v2.2</span></h1>
+    </a>
+    <nav class="nav-links" id="nav-links">
+      <a href="/" class="nav-link">工具</a>
+      <a href="/help" class="nav-link active">帮助</a>
+      <div id="auth-links">
+        <a href="/login" class="nav-link">登录</a>
+        <a href="/register" class="nav-link" style="color: var(--accent);">注册</a>
+      </div>
+      <div id="user-menu" style="display: none; margin-left: auto; align-items: center; gap: 8px;">
+        <span class="user-info" id="user-info" style="font-size: 13px; color: var(--text-dim);"></span>
+        <a href="/" class="nav-link" style="padding: 5px 12px;">返回工具</a>
+        <button class="nav-btn" onclick="logout()" style="background: transparent; border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;">退出</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>帮助中心</h1>
+      <p>快速上手 DockerConverter，轻松将 docker run 命令转换为 docker-compose.yml</p>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-number">50+</div>
+          <div class="stat-label">支持参数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">Web</div>
+          <div class="stat-label">CLI 双模式</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">实时</div>
+          <div class="stat-label">转换预览</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <div class="container">
+
+    <!-- 功能介绍 -->
+    <section class="section animate-in">
+      <h2 class="section-title">
+        <span class="icon">✨</span>
+        功能介绍
+      </h2>
+      <p class="section-desc">
+        DockerConverter 是一款高效的在线工具，可以将传统的 docker run 命令批量转换为现代的 docker-compose.yml 格式。
+        支持 Web UI 和命令行两种使用方式，满足不同场景的需求。
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔄</div>
+          <h3>批量转换</h3>
+          <p>支持一次性输入多条 docker run 命令，自动识别并批量转换为 docker-compose.yml 格式，大幅提升工作效率。</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">👁️</div>
+          <h3>实时预览</h3>
+          <p>输入命令后立即看到转换结果，支持语法高亮显示的 YAML 输出，方便检查和修改。</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📚</div>
+          <h3>参数丰富</h3>
+          <p>支持 50+ 种 docker run 参数，包括网络、存储、资源限制、健康检查等常见配置。</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3>历史记录</h3>
+          <p>登录后可保存转换历史，支持查看、复制和重新编辑，方便管理多个项目的配置。</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📤</div>
+          <h3>文件上传</h3>
+          <p>支持上传 .txt 文件批量处理，可以先在编辑器中编写好命令，再统一转换。</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>主题美观</h3>
+          <p>采用现代化的深色主题设计，界面简洁美观，支持响应式布局，适配各种设备。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 快速开始 -->
+    <section class="section animate-in delay-1">
+      <h2 class="section-title">
+        <span class="icon">🚀</span>
+        快速开始
+      </h2>
+      <p class="section-desc">
+        只需三步，即可完成 docker run 到 docker-compose.yml 的转换。
+      </p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>粘贴命令</h3>
+            <p>在左侧输入框中粘贴您的 docker run 命令。支持多条命令、多行续行（\）和注释（#）。</p>
+            <div class="code-block">
+              <code>
+docker run -d \
+  --name my-nginx \
+  -p 80:80 \
+  -v ./html:/usr/share/nginx/html:ro \
+  --restart unless-stopped \
+  nginx:latest
+              </code>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>点击转换</h3>
+            <p>点击"⚡ 转换"按钮，或使用快捷键 <code>Ctrl + Enter</code>，即可实时生成 docker-compose.yml。</p>
+            <div class="callout callout-info">
+              <div class="callout-icon">💡</div>
+              <div class="callout-content">
+                <h4>小提示</h4>
+                <p>可以点击"示例"按钮加载内置的示例命令，了解支持的参数格式。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>复制或下载</h3>
+            <p>转换完成后，可以一键复制 YAML 内容，或下载为 docker-compose.yml 文件。</p>
+            <div class="code-block">
+              <code>
+<span class="code-comment"># 查看转换结果</span>
+<span class="code-keyword">services</span>:
+  <span class="code-flag">my-nginx</span>:
+    image: nginx:latest
+    container_name: my-nginx
+    ports:
+      - <span class="code-string">"80:80"</span>
+    volumes:
+      - <span class="code-string">./html:/usr/share/nginx/html:ro</span>
+    restart: unless-stopped
+              </code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 支持的参数 -->
+    <section class="section animate-in delay-2">
+      <h2 class="section-title">
+        <span class="icon">🔧</span>
+        支持的参数
+      </h2>
+      <p class="section-desc">
+        DockerConverter 支持将大多数常用的 docker run 参数转换为 docker-compose 格式。以下是主要支持的参数列表：
+      </p>
+
+      <table class="params-table">
+        <thead>
+          <tr>
+            <th>docker run 参数</th>
+            <th>docker-compose 字段</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>--name</code></td>
+            <td><code>container_name</code></td>
+            <td>容器名称</td>
+          </tr>
+          <tr>
+            <td><code>-p</code> / <code>--publish</code></td>
+            <td><code>ports</code></td>
+            <td>端口映射</td>
+          </tr>
+          <tr>
+            <td><code>-v</code> / <code>--volume</code></td>
+            <td><code>volumes</code></td>
+            <td>数据卷挂载</td>
+          </tr>
+          <tr>
+            <td><code>-e</code> / <code>--env</code></td>
+            <td><code>environment</code></td>
+            <td>环境变量</td>
+          </tr>
+          <tr>
+            <td><code>--restart</code></td>
+            <td><code>restart</code></td>
+            <td>重启策略</td>
+          </tr>
+          <tr>
+            <td><code>--network</code></td>
+            <td><code>networks</code></td>
+            <td>网络配置</td>
+          </tr>
+          <tr>
+            <td><code>--hostname</code></td>
+            <td><code>hostname</code></td>
+            <td>主机名</td>
+          </tr>
+          <tr>
+            <td><code>--add-host</code></td>
+            <td><code>extra_hosts</code></td>
+            <td>额外hosts映射</td>
+          </tr>
+          <tr>
+            <td><code>--privileged</code></td>
+            <td><code>privileged: true</code></td>
+            <td>特权模式</td>
+          </tr>
+          <tr>
+            <td><code>--read-only</code></td>
+            <td><code>read_only: true</code></td>
+            <td>只读根文件系统</td>
+          </tr>
+          <tr>
+            <td><code>-t</code> / <code>--tty</code></td>
+            <td><code>tty: true</code></td>
+            <td>分配伪终端</td>
+          </tr>
+          <tr>
+            <td><code>-i</code> / <code>--interactive</code></td>
+            <td><code>stdin_open: true</code></td>
+            <td>保持标准输入打开</td>
+          </tr>
+          <tr>
+            <td><code>--cpus</code> / <code>-m</code></td>
+            <td><code>deploy.resources.limits</code></td>
+            <td>CPU和内存限制</td>
+          </tr>
+          <tr>
+            <td><code>--health-*</code></td>
+            <td><code>healthcheck</code></td>
+            <td>健康检查配置</td>
+          </tr>
+          <tr>
+            <td><code>--dns</code> / <code>--dns-search</code></td>
+            <td><code>dns</code> / <code>dns_search</code></td>
+            <td>DNS配置</td>
+          </tr>
+          <tr>
+            <td><code>--cap-add</code> / <code>--cap-drop</code></td>
+            <td><code>cap_add</code> / <code>cap_drop</code></td>
+            <td>Linux capabilities</td>
+          </tr>
+          <tr>
+            <td><code>--gpus</code></td>
+            <td><code>deploy.resources.reservations</code></td>
+            <td>GPU配置</td>
+          </tr>
+          <tr>
+            <td><code>--user</code></td>
+            <td><code>user</code></td>
+            <td>运行用户</td>
+          </tr>
+          <tr>
+            <td><code>--working-dir</code> / <code>-w</code></td>
+            <td><code>working_dir</code></td>
+            <td>工作目录</td>
+          </tr>
+          <tr>
+            <td><code>--label</code></td>
+            <td><code>labels</code></td>
+            <td>容器标签</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning" style="margin-top: 24px;">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-content">
+          <h4>注意事项</h4>
+          <p>
+            部分参数（如 <code>--pull</code>、<code>--detach</code>、<code>--rm</code> 等）在 docker-compose 中有默认行为或不支持，
+            这些参数会被自动忽略。部分复杂参数（如 mount、volumes-from 等）目前尚未支持。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 使用示例 -->
+    <section class="section animate-in delay-3">
+      <h2 class="section-title">
+        <span class="icon">📝</span>
+        使用示例
+      </h2>
+      <p class="section-desc">
+        下面是一些常见使用场景的完整示例，展示了如何将复杂的 docker run 命令转换为 docker-compose.yml。
+      </p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">📦</div>
+          <div class="step-content">
+            <h3>完整的Web服务配置</h3>
+            <p>包含端口、环境变量、卷挂载、健康检查等完整配置：</p>
+            <div class="code-block">
+              <button class="copy-btn" onclick="copyCode(this)">复制</button>
+              <code>
+<span class="code-comment"># 输入命令</span>
+docker run -d \
+  --name my-webapp \
+  -p 8080:80 \
+  -e APP_ENV=production \
+  -e DB_HOST=db.example.com \
+  -v ./data:/var/www/data \
+  -v ./logs:/var/log/nginx \
+  --network app-net \
+  --network-alias webapp \
+  --restart always \
+  --health-cmd "curl -f http://localhost/health || exit 1" \
+  --health-interval 30s \
+  --health-timeout 10s \
+  --health-retries 3 \
+  --memory 512m \
+  --cpus 0.5 \
+  nginx:alpine
+              </code>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">🗄️</div>
+          <div class="step-content">
+            <h3>数据库服务配置</h3>
+            <p>数据库服务通常需要持久化存储和安全配置：</p>
+            <div class="code-block">
+              <button class="copy-btn" onclick="copyCode(this)">复制</button>
+              <code>
+<span class="code-comment"># 输入命令</span>
+docker run -d \
+  --name postgres-db \
+  -p 5432:5432 \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=secret123 \
+  -e POSTGRES_DB=myapp \
+  -v postgres-data:/var/lib/postgresql/data \
+  --network app-net \
+  --restart always \
+  --health-cmd "pg_isready -U admin" \
+  --health-interval 10s \
+  --health-timeout 5s \
+  --health-retries 5 \
+  postgres:15-alpine
+              </code>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">🤖</div>
+          <div class="step-content">
+            <h3>后台Worker服务</h3>
+            <p>后台任务服务通常不需要端口映射，但需要资源限制：</p>
+            <div class="code-block">
+              <button class="copy-btn" onclick="copyCode(this)">复制</button>
+              <code>
+<span class="code-comment"># 输入命令</span>
+docker run -d \
+  --name my-worker \
+  --network app-net \
+  --add-host host.docker.internal:host-gateway \
+  -e REDIS_HOST=redis.example.com \
+  -e QUEUE_NAME=tasks \
+  -v ./worker-logs:/app/logs \
+  --restart unless-stopped \
+  --memory 1g \
+  --cpus 1 \
+  --user 1000:1000 \
+  myorg/worker:v2.0
+              </code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 常见问题 -->
+    <section class="section animate-in delay-4">
+      <h2 class="section-title">
+        <span class="icon">❓</span>
+        常见问题
+      </h2>
+      <p class="section-desc">
+        关于 DockerConverter 的常见问题及解答。
+      </p>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>为什么转换后的 YAML 有些参数不完整？</span>
+            <span class="toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-content">
+              <p>
+                部分 docker run 参数在 docker-compose 中没有直接的对应配置，或者需要额外的手动调整。
+                这些参数会在转换时给出警告提示。建议仔细检查生成的 YAML，并根据实际情况进行补充修改。
+                如果遇到不支持的参数，欢迎在 GitHub 上提交 Issue。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>支持 docker compose 命令吗？</span>
+            <span class="toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-content">
+              <p>
+                目前 DockerConverter 主要支持 docker run 命令的转换。如果您的命令已经是 docker-compose 格式，
+                或者需要从现有的 compose 文件中提取 run 命令，则不需要使用此工具。未来的版本可能会增加更多功能支持。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>网络配置有什么需要注意的？</span>
+            <span class="toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-content">
+              <p>
+                使用 <code>--network</code> 参数指定的网络会自动在 compose 文件中声明为外部网络（external: true）。
+                如果您希望使用内部网络，需要手动修改 compose 文件中的网络配置。另外，如果多个服务使用同一个网络，
+                确保它们的服务名和网络配置都正确。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>如何处理敏感信息？</span>
+            <span class="toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-content">
+              <p>
+                建议使用 <code>--env-file</code> 参数从环境变量文件中读取敏感配置，而不是直接在命令行中明文传递密码。
+                转换后的 compose 文件中，敏感信息可以通过 Docker Secrets 或环境变量文件来管理，
+                而不是直接写在 YAML 中。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>转换后的文件可以直接使用吗？</span>
+            <span class="toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-content">
+              <p>
+                大多数情况下，转换后的 docker-compose.yml 可以直接使用。但在生产环境中，建议：
+                1) 检查所有配置是否符合预期；2) 使用环境变量替代硬编码的敏感信息；
+                3) 根据实际需求调整网络、存储等配置；4) 在测试环境中验证后再部署到生产。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>如何获取命令行版本？</span>
+            <span class="toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-content">
+              <p>
+                DockerConverter 同时提供命令行工具。在项目根目录执行 <code>python DockerConverter.py</code>
+                即可使用 CLI 模式。CLI 模式会读取 <code>samples/docker_commands.txt</code> 文件中的命令，
+                并输出转换结果到 <code>docker-compose.yml</code> 文件。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>--rm 参数如何处理？</span>
+            <span class="toggle">+</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-content">
+              <p>
+                <code>--rm</code> 参数在 Docker Compose 中没有直接的对应配置。这个参数用于在 <code>docker run</code>
+                时让容器在退出后自动删除。
+              </p>
+              <p style="margin-top: 12px;">
+                在 Docker Compose 中，容器默认不会在退出时自动删除。如果您需要类似的行为：
+              </p>
+              <ul style="margin-top: 12px; margin-left: 20px; color: var(--text-dim);">
+                <li style="margin-bottom: 8px;">使用 <code>docker compose up</code> 启动后，使用 <code>docker compose down</code> 可以删除所有相关资源</li>
+                <li style="margin-bottom: 8px;">使用 <code>docker compose run --rm service_name</code> 可以在一次性运行命令时自动清理</li>
+                <li>对于需要定期清理的场景，可以在 Compose 文件中通过其他机制（如健康检查 + 脚本）来处理</li>
+              </ul>
+              <p style="margin-top: 12px;">
+                DockerConverter 在转换时会检测到 <code>--rm</code> 参数并给出警告，但不会影响其他参数的转换。
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 快捷链接 -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="icon">🔗</span>
+        快捷链接
+      </h2>
+      <div class="quick-links">
+        <a href="/" class="quick-link">
+          <span class="icon">🔧</span>
+          <span>开始转换</span>
+        </a>
+        <a href="/register" class="quick-link">
+          <span class="icon">📝</span>
+          <span>注册账号</span>
+        </a>
+        <a href="/admin" class="quick-link">
+          <span class="icon">⚙️</span>
+          <span>管理面板</span>
+        </a>
+        <a href="/profile" class="quick-link">
+          <span class="icon">👤</span>
+          <span>用户中心</span>
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      DockerConverter v2.2 · Made with ❤️ · 
+      <a href="https://github.com" target="_blank">GitHub</a>
+    </p>
+  </footer>
+
+  <script>
+    // FAQ Toggle
+    function toggleFaq(element) {
+      const faqItem = element.parentElement;
+      faqItem.classList.toggle('open');
+    }
+
+    // Copy Code
+    function copyCode(btn) {
+      const codeBlock = btn.nextElementSibling;
+      const code = codeBlock.innerText;
+      
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = '已复制!';
+        btn.style.background = 'var(--ok)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--ok)';
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+          btn.style.color = '';
+          btn.style.borderColor = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('复制失败:', err);
+        btn.textContent = '复制失败';
+        setTimeout(() => {
+          btn.textContent = '复制';
+        }, 2000);
+      });
+    }
+
+    // Scroll Animation
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.section').forEach(section => {
+      section.style.opacity = '0';
+      section.style.transform = 'translateY(20px)';
+      section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(section);
+    });
+
+    // Update nav active state
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.nav-link').forEach(link => {
+      if (link.getAttribute('href') === currentPath) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+
+    // Check user login status and update nav
+    (async () => {
+      try {
+        const res = await fetch("/api/me");
+        const data = await res.json();
+        const authLinks = document.getElementById("auth-links");
+        const userMenu = document.getElementById("user-menu");
+        const userInfo = document.getElementById("user-info");
+
+        if (data.user) {
+          // User is logged in, show user menu
+          authLinks.style.display = "none";
+          userMenu.style.display = "flex";
+          userInfo.textContent = `欢迎, ${data.user.username}`;
+        } else {
+          // User is not logged in, show auth links
+          authLinks.style.display = "flex";
+          userMenu.style.display = "none";
+        }
+      } catch (error) {
+        console.error("Failed to check login status:", error);
+        // On error, show auth links as fallback
+        document.getElementById("auth-links").style.display = "flex";
+        document.getElementById("user-menu").style.display = "none";
+      }
+    })();
+
+    // Logout function
+    async function logout() {
+      try {
+        await fetch("/api/logout", { method: "POST" });
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Logout failed:", error);
+        window.location.href = "/";
+      }
+    }
+  </script>
+</body>
+</html>

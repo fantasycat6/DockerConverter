@@ -31,6 +31,7 @@ FIELD_ORDER: list[str] = [
     "restart",
     "networks",
     "hostname",
+    "domainname",
     "entrypoint",
     "command",
     "env_file",
@@ -41,12 +42,39 @@ FIELD_ORDER: list[str] = [
     "tty",
     "stdin_open",
     "user",
+    "working_dir",
     "cap_add",
     "cap_drop",
     "devices",
     "labels",
     "sysctls",
     "tmpfs",
+    "dns",
+    "dns_search",
+    "dns_opt",
+    "ipc",
+    "pid",
+    "uts",
+    "userns_mode",
+    "isolation",
+    "init",
+    "network_mode",
+    "network_aliases",
+    "links",
+    "group_add",
+    "mac_address",
+    "ip",
+    "ip6",
+    "shm_size",
+    "cgroup_parent",
+    "cgroup",
+    "ulimits",
+    "security_opt",
+    "storage_opt",
+    "runtime",
+    "platform",
+    "stop_signal",
+    "stop_grace_period",
     "deploy",
 ]
 
@@ -85,6 +113,64 @@ docker run --name another-app \\
   --cpus 0.25 \\
   --memory 64m \\
   myapp:dev
+
+# 新增更多参数的示例
+docker run -d \\
+  --name my-full-service \\
+  -p 8081:80 \\
+  -v ./data:/data \\
+  -e APP_ENV=prod \\
+  -e DB_URL=postgres://user:pass@db:5432/mydb \\
+  --hostname myapp \\
+  --domainname example.com \\
+  --workdir /app \\
+  --dns 8.8.8.8 \\
+  --dns 8.8.4.4 \\
+  --dns-search localdomain \\
+  --dns-option ndots:0 \\
+  --ipc host \\
+  --pid host \\
+  --uts host \\
+  --init \\
+  --network my-net \\
+  --network-alias app1 \\
+  --network-alias app2 \\
+  --link my-db:db \\
+  --group-add 999 \\
+  --mac-address 02:42:ac:11:00:02 \\
+  --ip 172.20.0.10 \\
+  --shm-size 2g \\
+  --privileged \\
+  --read-only \\
+  -it \\
+  --user 1000:1000 \\
+  --cap-add SYS_ADMIN \\
+  --cap-drop MKNOD \\
+  --device /dev/ttyUSB0 \\
+  --label app=myapp \\
+  --label version=1.0 \\
+  --sysctl net.core.somaxconn=1024 \\
+  --tmpfs /tmp:rw,size=100m \\
+  --ulimit nofile=65536:65536 \\
+  --ulimit nproc=4096 \\
+  --security-opt apparmor=unconfined \\
+  --stop-signal SIGINT \\
+  --stop-timeout 60 \\
+  --restart always \\
+  --health-cmd "curl -f http://localhost/health || exit 1" \\
+  --health-interval 30s \\
+  --health-timeout 10s \\
+  --health-retries 3 \\
+  --health-start-period 1m \\
+  --gpus all \\
+  --memory 1g \\
+  --memory-reservation 512m \\
+  --memory-swap 2g \\
+  --cpu-shares 512 \\
+  --cpuset-cpus 0-1 \\
+  --oom-kill-disable \\
+  --platform linux/amd64 \\
+  nginx:alpine
 """
 
 
@@ -160,6 +246,14 @@ def _flush_buffer(buffer: list[str]) -> str:
     raw = " ".join(buffer)
     raw = re.sub(r"\s*\\\s*", " ", raw)
     return raw.strip()
+
+
+def _parse_kv_pair(kv_str: str) -> dict:
+    """解析 'key=value' 格式的字符串为字典。"""
+    if "=" in kv_str:
+        key, val = kv_str.split("=", 1)
+        return {key.strip(): val.strip()}
+    return {}
 
 
 # ──────────────────────────────────────────────────────────────
@@ -307,23 +401,237 @@ def parse_docker_run_command(
             service_config.setdefault("tmpfs", []).append(_safe_next(args, i, arg))
             i += 2
 
-        elif arg in ("--cpus", "--memory", "--memory-swap"):
-            key_map = {"--cpus": "cpus", "--memory": "memory", "--memory-swap": "memory_swap"}
+        elif arg in ("-w", "--workdir"):
+            service_config["working_dir"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--domainname":
+            service_config["domainname"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--dns":
+            service_config.setdefault("dns", []).append(_safe_next(args, i, arg))
+            i += 2
+
+        elif arg == "--dns-option":
+            service_config.setdefault("dns_opt", []).append(_safe_next(args, i, arg))
+            i += 2
+
+        elif arg == "--dns-search":
+            service_config.setdefault("dns_search", []).append(_safe_next(args, i, arg))
+            i += 2
+
+        elif arg == "--ipc":
+            service_config["ipc"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--pid":
+            service_config["pid"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--uts":
+            service_config["uts"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--userns":
+            service_config["userns_mode"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--isolation":
+            service_config["isolation"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--init":
+            service_config["init"] = True
+            i += 1
+
+        elif arg == "--network-alias":
+            service_config.setdefault("network_aliases", []).append(_safe_next(args, i, arg))
+            i += 2
+
+        elif arg == "--link":
+            service_config.setdefault("links", []).append(_safe_next(args, i, arg))
+            i += 2
+
+        elif arg == "--group-add":
+            service_config.setdefault("group_add", []).append(_safe_next(args, i, arg))
+            i += 2
+
+        elif arg == "--mac-address":
+            service_config["mac_address"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--ip":
+            service_config["ip"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--ip6":
+            service_config["ip6"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--shm-size":
+            service_config["shm_size"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--cgroup-parent":
+            service_config["cgroup_parent"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--cgroupns":
+            service_config["cgroup"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--security-opt":
+            service_config.setdefault("security_opt", []).append(_safe_next(args, i, arg))
+            i += 2
+
+        elif arg == "--storage-opt":
+            service_config.setdefault("storage_opt", {}).update(_parse_kv_pair(_safe_next(args, i, arg)))
+            i += 2
+
+        elif arg == "--runtime":
+            service_config["runtime"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--platform":
+            service_config["platform"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--stop-signal":
+            service_config["stop_signal"] = _safe_next(args, i, arg)
+            i += 2
+
+        elif arg == "--stop-timeout":
+            timeout = _safe_next(args, i, arg)
+            service_config["stop_grace_period"] = f"{timeout}s"
+            i += 2
+
+        elif arg in ("--ulimit", "--ulimits"):
+            ulimit_val = _safe_next(args, i, arg)
+            if "=" in ulimit_val:
+                name, limit = ulimit_val.split("=", 1)
+                if ":" in limit:
+                    soft, hard = limit.split(":", 1)
+                    service_config.setdefault("ulimits", {})[name] = {"soft": soft, "hard": hard}
+                else:
+                    service_config.setdefault("ulimits", {})[name] = limit
+            i += 2
+
+        elif arg in ("-m", "--memory", "--memory-reservation", "--memory-swap", "--memory-swappiness", "--cpu-shares", "--cpuset-cpus", "--cpuset-mems", "--cpu-period", "--cpu-quota", "--cpu-rt-period", "--cpu-rt-runtime", "--pids-limit", "--oom-kill-disable", "--oom-score-adj", "--blkio-weight", "--blkio-weight-device", "--device-read-bps", "--device-write-bps", "--device-read-iops", "--device-write-iops", "--device-cgroup-rule"):
+            key_map = {
+                "--memory": "memory",
+                "--memory-reservation": "memory_reservation",
+                "--memory-swap": "memory_swap",
+                "--memory-swappiness": "memory_swappiness",
+                "--cpu-shares": "cpu_shares",
+                "--cpuset-cpus": "cpuset_cpus",
+                "--cpuset-mems": "cpuset_mems",
+                "--cpu-period": "cpu_period",
+                "--cpu-quota": "cpu_quota",
+                "--cpu-rt-period": "cpu_rt_period",
+                "--cpu-rt-runtime": "cpu_rt_runtime",
+                "--pids-limit": "pids_limit",
+                "--oom-score-adj": "oom_score_adj",
+                "--blkio-weight": "blkio_weight",
+                "--blkio-weight-device": "blkio_weight_device",
+                "--device-read-bps": "device_read_bps",
+                "--device-write-bps": "device_write_bps",
+                "--device-read-iops": "device_read_iops",
+                "--device-write-iops": "device_write_iops",
+                "--device-cgroup-rule": "device_cgroup_rule",
+            }
+            if arg == "--oom-kill-disable":
+                (service_config
+                 .setdefault("deploy", {})
+                 .setdefault("resources", {})
+                 .setdefault("limits", {}))["oom_kill_disable"] = True
+                i += 1
+            else:
+                if arg in ("--blkio-weight-device", "--device-read-bps", "--device-write-bps", "--device-read-iops", "--device-write-iops", "--device-cgroup-rule"):
+                    (service_config
+                     .setdefault("deploy", {})
+                     .setdefault("resources", {})
+                     .setdefault("limits", {})
+                     .setdefault(key_map[arg], [])).append(_safe_next(args, i, arg))
+                else:
+                    (service_config
+                     .setdefault("deploy", {})
+                     .setdefault("resources", {})
+                     .setdefault("limits", {}))[key_map[arg]] = _safe_next(args, i, arg)
+                i += 2
+
+        elif arg in ("--cpus",):
+            key_map = {"--cpus": "cpus"}
             (service_config
              .setdefault("deploy", {})
              .setdefault("resources", {})
              .setdefault("limits", {}))[key_map[arg]] = _safe_next(args, i, arg)
             i += 2
 
+        elif arg == "--gpus":
+            (service_config
+             .setdefault("deploy", {})
+             .setdefault("resources", {})
+             .setdefault("reservations", {})
+             .setdefault("devices", []))
+            gpu_val = _safe_next(args, i, arg)
+            if gpu_val == "all":
+                service_config["deploy"]["resources"]["reservations"]["devices"].append({
+                    "driver": "nvidia",
+                    "count": -1,
+                    "capabilities": [["gpu"]]
+                })
+            else:
+                try:
+                    count = int(gpu_val)
+                    service_config["deploy"]["resources"]["reservations"]["devices"].append({
+                        "driver": "nvidia",
+                        "count": count,
+                        "capabilities": [["gpu"]]
+                    })
+                except ValueError:
+                    log.warn(f"Unsupported --gpus value '{gpu_val}', using all GPUs")
+                    service_config["deploy"]["resources"]["reservations"]["devices"].append({
+                        "driver": "nvidia",
+                        "count": -1,
+                        "capabilities": [["gpu"]]
+                    })
+            i += 2
+
         elif arg.startswith("--health-"):
-            log.warn(f"Healthcheck option '{arg}' is not supported and will be skipped.")
+            if arg == "--health-cmd":
+                service_config.setdefault("healthcheck", {})["test"] = _safe_next(args, i, arg).split()
+                i += 2
+            elif arg == "--health-interval":
+                service_config.setdefault("healthcheck", {})["interval"] = _safe_next(args, i, arg)
+                i += 2
+            elif arg == "--health-timeout":
+                service_config.setdefault("healthcheck", {})["timeout"] = _safe_next(args, i, arg)
+                i += 2
+            elif arg == "--health-retries":
+                service_config.setdefault("healthcheck", {})["retries"] = int(_safe_next(args, i, arg))
+                i += 2
+            elif arg == "--health-start-period":
+                service_config.setdefault("healthcheck", {})["start_period"] = _safe_next(args, i, arg)
+                i += 2
+            elif arg == "--health-start-interval":
+                log.warn(f"Healthcheck option '{arg}' is not supported and will be skipped.")
+                if i + 1 < len(args) and not args[i + 1].startswith("-"):
+                    i += 2
+                else:
+                    i += 1
+
+        elif arg == "--rm":
+            log.warn("Option '--rm' is not applicable to Docker Compose (container removal on exit is not supported in Compose).")
+            log.info("In Docker Compose, containers are not automatically removed on exit by default.")
+            i += 1
+        
+        elif arg in ("-d", "--detach", "--no-healthcheck", "--pull", "-q", "--quiet", "--cidfile", "--use-api-socket", "--attach", "--annotation", "--label-file", "--volume-driver", "--volumes-from", "--log-driver", "--log-opt", "--link-local-ip", "--sig-proxy", "--detach-keys", "--mount"):
+            log.warn(f"Option '{arg}' is not fully supported and will be ignored.")
             if i + 1 < len(args) and not args[i + 1].startswith("-"):
                 i += 2
             else:
                 i += 1
-
-        elif arg in ("-d", "--detach", "--rm", "--no-healthcheck"):
-            i += 1  # 静默忽略
 
         elif arg.startswith("-"):
             log.warn(f"Unsupported option '{arg}' will be ignored.")
